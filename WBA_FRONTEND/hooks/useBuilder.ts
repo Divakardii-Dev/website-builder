@@ -1,0 +1,21 @@
+"use client";
+
+import { useBuilderStore } from "@/store/builderStore";
+import { useShallow } from "zustand/react/shallow";
+
+export const useBuilder = () => useBuilderStore();
+
+export const useBuilderActions = () =>
+  useBuilderStore(
+    useShallow((s) => ({
+      addComponent: s.addComponent,
+      updateComponent: s.updateComponent,
+      duplicateComponent: s.duplicateComponent,
+      deleteComponent: s.deleteComponent,
+      selectComponent: s.selectComponent,
+      reorderComponents: s.reorderComponents,
+      loadStarterWebsite: s.loadStarterWebsite,
+      loadWebsiteFromRequirements: s.loadWebsiteFromRequirements,
+      clearCanvas: s.clearCanvas,
+    })),
+  );

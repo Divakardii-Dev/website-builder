@@ -1,0 +1,3580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+  <title>Stackly Auth</title>
+
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome for field icons (user, email, lock) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <style>
+    html {
+      height: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      min-height: 100%;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      html {
+        height: -webkit-fill-available;
+      }
+      body {
+        min-height: -webkit-fill-available;
+      }
+    }
+
+    /* Hide browser's native password reveal (e.g. Edge) so only our single eye shows */
+    input[type="password"]::-ms-reveal {
+      display: none !important;
+    }
+
+    .font-welcome-heading {
+      font-family: "Times New Roman", Georgia, serif;
+      letter-spacing: 0.35em;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    @media (max-width: 1023px) {
+      #signupPage .signup-card-content .signup-brand-stack {
+        align-items: center;
+        width: 100%;
+      }
+    }
+    @media (max-width: 400px) {
+      #signupPage .signup-card-content .signup-welcome-title {
+        width: auto !important;
+        max-width: none !important;
+        padding-inline: 0;
+      }
+    }
+
+    .error-text {
+      font-size: 12px;
+      color: #ff6b6b;
+      margin-top: 4px;
+      font-weight: 500;
+      text-shadow: 0 0 1px rgba(0,0,0,0.3);
+    }
+
+    /* Planning header: nav buttons + active underline (matches app/planning) */
+    .planning-nav-btn {
+      border-bottom: 2px solid transparent;
+      padding-bottom: 0.125rem;
+      background: none;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8125rem; /* 13px; sm:text-sm in Tailwind on wrapper where used */
+      color: #ffffff;
+    }
+    @media (min-width: 640px) {
+      .planning-nav-btn {
+        font-size: 0.875rem; /* 14px */
+      }
+    }
+    .planning-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0.375rem;
+      color: #fff;
+    }
+    .planning-nav-btn.planning-nav-active {
+      border-bottom-color: #f0e6d4;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0.375rem;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .planning-billing-label--active {
+      font-weight: 700;
+      color: #0c1e36;
+    }
+    .planning-billing-label:not(.planning-billing-label--active) {
+      font-weight: 500;
+      color: #3d4f63;
+    }
+    #planningBillingKnob {
+      transition: transform 0.2s ease;
+    }
+
+    /* Planning purchase flow (payment/invoice/history): mobile + 100-200% zoom safety */
+    #planningPaymentView {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 740px;
+      min-width: 0;
+    }
+    #planningInvoiceView {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 740px;
+      min-width: 0;
+    }
+    #planningHistoryView {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+    #planningPaymentView *,
+    #planningInvoiceView *,
+    #planningHistoryView * {
+      box-sizing: border-box;
+      min-width: 0;
+    }
+    /* Mobile/tablet safety at high zoom: always keep plan cards stacked */
+    @media (max-width: 1023px) {
+      .planning-plans-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      .planning-billing-toggle-wrap {
+        gap: 0.45rem !important;
+      }
+      .planning-billing-toggle-wrap .planning-billing-label {
+        min-width: 0;
+        font-size: 12px !important;
+        line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+    }
+    @media (max-width: 640px) {
+      #planningPaymentView { max-width: 100% !important; }
+      #planningInvoiceView { max-width: 100% !important; }
+      #planningHistoryView { max-width: 100% !important; }
+      #planningPaymentView,
+      #planningInvoiceView,
+      #planningHistoryView {
+        border-radius: 6px !important;
+      }
+      #planningPaymentView input,
+      #planningPaymentView select {
+        font-size: 12px !important;
+      }
+      #planningInvoiceView h2 {
+        font-size: 1.55rem !important;
+        line-height: 1.15 !important;
+      }
+      #planningInvoiceView > div {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+      #planningHistoryView h2 { font-size: 1.5rem !important; }
+      #planningHistoryView { padding: 0.75rem !important; }
+      #planningHistoryView .planning-history-track { max-width: 100% !important; }
+      #planningHistoryView .planning-history-table-wrap { max-width: 100% !important; }
+      #planningHistoryView table { min-width: 430px; font-size: 10px !important; }
+      #planningInvoiceView .planning-invoice-row {
+        grid-template-columns: 78px 10px minmax(0, 1fr) !important;
+      }
+      #planningInvoiceView .planning-invoice-value {
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+      }
+      .planning-price-row {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.4rem !important;
+      }
+      .planning-price-oldsave {
+        width: 100%;
+        padding-right: 0 !important;
+      }
+      .planning-price-chip {
+        align-self: flex-end;
+        margin-right: 0 !important;
+        top: 0 !important;
+      }
+    }
+    @media (max-width: 420px) {
+      #planningPaymentView .grid.grid-cols-2 {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      #planningInvoiceView .planning-invoice-row {
+        grid-template-columns: 78px 10px minmax(0, 1fr) !important;
+      }
+      .planning-billing-toggle-wrap {
+        justify-content: center !important;
+        gap: 0.5rem !important;
+      }
+      .planning-billing-toggle-wrap .planning-billing-label {
+        flex: 0 0 auto !important;
+        font-size: 11px !important;
+        line-height: 1.05 !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .planning-billing-toggle-wrap .planning-billing-label:first-child,
+      .planning-billing-toggle-wrap .planning-billing-label:last-child {
+        max-width: 48px;
+        white-space: normal !important;
+      }
+      #planningHistoryView table {
+        min-width: 380px !important;
+      }
+    }
+
+    .planning-recommended-content-offset {
+      margin-top: 0;
+    }
+    /* Mobile + zoom safety: keep recommended badge clear of title */
+    @media (max-width: 768px) {
+      .planning-recommended-card {
+        padding-top: 2rem !important;
+      }
+      .planning-recommended-content-offset {
+        margin-top: 0.95rem !important;
+      }
+    }
+
+    /* Force square top header edges across laptop/browser differences */
+    .planning-top-nav,
+    .planning-top-nav-inner {
+      border-radius: 0 !important;
+    }
+
+    /* Desktop zoom fallback (roughly 150-200%): show hamburger + compact menu for planning header */
+    @media (hover: hover) and (pointer: fine) and (max-width: 1400px) and (min-resolution: 1.25dppx) {
+      .planning-zoom-show-hamburger {
+        display: inline-flex !important;
+      }
+      .planning-zoom-hide-primary-nav {
+        display: none !important;
+      }
+      .planning-zoom-show-mobile-menu:not(.hidden) {
+        display: block !important;
+      }
+      /* Prevent badge/title overlap on recommended card at desktop 150-200% zoom */
+      .planning-recommended-card {
+        padding-top: 1.85rem !important;
+      }
+      .planning-recommended-content-offset {
+        margin-top: 0.85rem !important;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .font-welcome-heading {
+        text-align: center;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        display: block;
+        letter-spacing: 0.12em;
+      }
+      .auth-card-content {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+    }
+
+    .forgot-password-link {
+      font-size: 16px;
+      color: #bfdbfe;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .forgot-password-link:hover {
+      color: #ffffff;
+    }
+    .forgot-password-link:focus-visible {
+      outline: 2px solid #f2b541;
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+
+    /* Login page override (as requested): white text, no underline */
+    #loginPage .forgot-password-link {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    #loginPage .forgot-password-link:hover {
+      color: #ffffff;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    /* Remember me + Forgot password: one row, left/right — stable at mobile zoom */
+    #loginPage .login-remember-forgot {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      column-gap: clamp(0.5rem, 2.5vw, 0.875rem);
+      row-gap: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    #loginPage .login-remember-forgot > label {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+    #loginPage .login-remember-forgot .forgot-password-link {
+      justify-self: end;
+      text-align: right;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+      font-size: clamp(10px, 3.4vw, 13px);
+    }
+
+    .auth-card-content {
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .auth-card-content input {
+      min-width: 0;
+    }
+
+    #signupPage .auth-card-content {
+      overflow: hidden;
+    }
+
+    /* Mobile: keep layout natural (no clipping); outer page scroll handles overflow */
+    @media (max-width: 1023px) {
+      .auth-form-card .auth-card-content,
+      .auth-form-card .signup-card-content {
+        overflow: visible !important;
+      }
+    }
+
+    .auth-image-col {
+      min-width: 0;
+      max-width: 100%;
+    }
+    img.auth-image {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    .auth-page .auth-layout,
+    .auth-page .auth-layout > * {
+      min-width: 0;
+    }
+
+    /* Auth pages: browser-normalization (scoped, keeps layout consistent) */
+    .auth-page *,
+    .auth-page *::before,
+    .auth-page *::after {
+      box-sizing: border-box;
+    }
+
+    /* Ensure consistent form control rendering across browsers (esp. iOS Safari) */
+    .auth-page input[type="text"],
+    .auth-page input[type="email"],
+    .auth-page input[type="password"],
+    .auth-page input[type="tel"] {
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 0;
+      font: inherit;
+      line-height: 1.2;
+    }
+
+    .auth-page button {
+      font: inherit;
+    }
+
+    .auth-page img.auth-image {
+      display: block;
+    }
+
+    /* Mobile/tablet: content width = inner strip (78% of card) */
+    @media (max-width: 1023px) {
+      .auth-inner-panel {
+        width: 78% !important;
+      }
+      #loginPage .login-card-inner,
+      #signupPage .signup-card-content {
+        width: calc(78% + 37.44px);
+        max-width: calc(78% + 37.44px);
+        margin-left: auto;
+        margin-right: auto;
+        min-width: 0;
+        overflow: visible !important; /* zoom up to 200%: never clip */
+        box-sizing: border-box;
+      }
+      #loginPage .login-card-inner form,
+      #signupPage .signup-card-content form,
+      #loginPage .login-card-inner button[type="submit"],
+      #signupPage .signup-card-content button[type="submit"] {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      #loginPage .login-card-inner .flex,
+      #signupPage .signup-card-content .flex {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      /* Mobile: move content slightly down for a balanced look */
+      #loginPage .login-card-inner {
+        padding-top: clamp(1.25rem, 4vh, 2.25rem) !important;
+        padding-bottom: clamp(1.25rem, 5.5vh, 2.75rem) !important;
+      }
+      #signupPage .signup-card-content {
+        padding-top: clamp(1rem, 3.5vh, 2rem) !important;
+        padding-bottom: clamp(1.25rem, 5vh, 2.75rem) !important;
+      }
+    }
+    @media (max-width: 420px) {
+      .auth-inner-panel {
+        width: 86% !important;
+      }
+      #loginPage .login-card-inner,
+      #signupPage .signup-card-content {
+        width: calc(86% + 41.28px) !important;
+        max-width: 100% !important;
+      }
+      #loginPage .login-card-inner input::placeholder,
+      #signupPage .signup-card-content input::placeholder {
+        font-size: 12px;
+      }
+      #loginPage .login-email-input::placeholder {
+        font-size: 10px;
+        letter-spacing: -0.03em;
+      }
+      #signupPage .signup-confirm-input::placeholder {
+        font-size: 10px;
+        letter-spacing: -0.03em;
+      }
+     .font-welcome-heading {
+        letter-spacing: 0.22em;
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .auth-inner-panel {
+        width: 100% !important;
+      }
+      #loginPage .login-card-inner,
+      #signupPage .signup-card-content {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      #loginPage .login-email-input::placeholder {
+        font-size: clamp(6px, 2.6vw, 11px);
+        letter-spacing: -0.05em;
+      }
+      #signupPage .signup-confirm-input::placeholder {
+        font-size: clamp(6px, 2.5vw, 11px);
+        letter-spacing: -0.06em;
+      }
+      #loginPage .login-email-icon {
+        margin-right: 0.35rem !important;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+      #signupPage .signup-confirm-icon {
+        margin-right: 0.65rem !important;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+      #signupPage .signup-confirm-input {
+        padding-right: 1.75rem !important;
+        min-width: 0;
+      }
+      .auth-form-card {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+      #loginPage .login-email-input {
+        padding-right: 0.125rem !important;
+        font-size: 16px !important;
+        min-width: 0;
+      }
+      #signupPage .signup-confirm-input {
+        min-width: 0;
+      }
+      .font-welcome-heading {
+        font-size: clamp(0.95rem, 4.5vw, 1.15rem);
+        letter-spacing: clamp(0.08em, 1.8vw, 0.2em);
+        white-space: normal;
+      }
+
+    }
+    @media (min-width: 640px) and (max-width: 1023px) {
+      #loginPage .login-card-inner,
+      #signupPage .signup-card-content {
+        width: calc(78% + 62.4px);
+        max-width: calc(78% + 62.4px);
+      }
+    }
+
+    /* Desktop only: vertically center auth layout */
+    @media (min-width: 1024px) {
+      .auth-page {
+        justify-content: center;
+      }
+    }
+    .auth-form-card,
+    .auth-form-card .auth-card-content,
+    .auth-form-card .signup-card-content {
+      min-width: 0;
+    }
+
+    .auth-layout {
+      min-width: 0;
+    }
+
+    @media (max-width: 768px) {
+      .auth-layout {
+        gap: 0.75rem;
+      }
+      .auth-card-content {
+        padding-bottom: 0.75rem;
+        padding-top: 0.75rem;
+      }
+      .auth-form-card .signup-card-content {
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+      }
+      .auth-form-card .auth-card-content {
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+      }
+      /* Tighter input rows on signup so Google button fits */
+      #signupPage .signup-card-content [class*="border-b"] {
+        padding-bottom: 0.375rem;
+      }
+    }
+
+    .login-card .auth-card-content {
+      overflow: hidden;
+    }
+
+    @media (min-width: 1024px) {
+      .auth-page .auth-layout {
+        max-height: 100%;
+      }
+    }
+
+    /* Mobile: no extra top/bottom bands; safe-area lives inside card */
+    @media (max-width: 1023px) {
+      body.auth-visible {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        overflow: hidden !important;
+        overscroll-behavior-y: auto;
+        background: linear-gradient(to bottom, #5f82e8 0%, #3f66c9 52%, #021a46 100%) !important;
+      }
+      .auth-page {
+        justify-content: flex-start;
+        align-items: stretch;
+        --auth-safe-top: env(safe-area-inset-top, 0px);
+        --auth-safe-bottom: env(safe-area-inset-bottom, 0px);
+        --auth-safe-left: env(safe-area-inset-left, 0px);
+        --auth-safe-right: env(safe-area-inset-right, 0px);
+        position: fixed;
+        inset: 0;
+        height: 100dvh;
+        min-height: 100dvh;
+        max-height: 100dvh;
+        padding-top: 0;
+        padding-bottom: 0;
+        /* Remove white margins on left/right in mobile. */
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: linear-gradient(to bottom, #5f82e8 0%, #3f66c9 52%, #021a46 100%) !important;
+      }
+      .auth-page .auth-layout {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 100%;
+        max-height: none;
+        gap: 0;
+        max-width: 100%;
+        justify-content: flex-start;
+        align-items: stretch;
+      }
+      .auth-page .auth-layout > div:first-child {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 100%;
+        align-items: stretch;
+      }
+      .auth-form-card {
+        width: 100%;
+        max-width: 100% !important;
+        align-self: stretch;
+        height: 100%;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        min-height: 100%;
+        max-height: none;
+        display: flex;
+        flex-direction: column;
+        margin-top: 0;
+        margin-bottom: 0;
+        overflow: hidden;
+      }
+      .auth-form-card .auth-card-content,
+      .auth-form-card .signup-card-content {
+        flex: 1;
+        min-height: 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start !important;
+        overflow: visible;
+      }
+
+      /* Mobile: remove bottom illustration entirely */
+      .auth-image-col {
+        display: none !important;
+      }
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      @media (max-width: 1023px) {
+        .auth-page {
+          height: -webkit-fill-available;
+          min-height: -webkit-fill-available;
+          max-height: -webkit-fill-available;
+        }
+        .auth-form-card {
+          height: 100%;
+          min-height: 100%;
+        }
+      }
+    }
+
+    /*
+     * Some phones render with wider CSS viewports (or desktop-site mode), which can bypass
+     * width breakpoints and reintroduce white bands. Force edge-to-edge auth layout on
+     * touch-first devices regardless of reported width.
+     */
+    @media (hover: none) and (pointer: coarse) and (max-width: 1023px) {
+      body.auth-visible {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        overflow: hidden !important;
+        overscroll-behavior-y: auto;
+        background: linear-gradient(to bottom, #5f82e8 0%, #3f66c9 52%, #021a46 100%) !important;
+      }
+      .auth-page {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100dvh;
+        min-height: 100dvh;
+        max-height: 100dvh;
+        padding: 0 !important;
+        justify-content: flex-start;
+        align-items: stretch;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: linear-gradient(to bottom, #5f82e8 0%, #3f66c9 52%, #021a46 100%) !important;
+      }
+      .auth-page .auth-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        gap: 0 !important;
+        height: 100%;
+        min-height: 100%;
+      }
+      .auth-page .auth-layout > div:first-child {
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+      }
+      .auth-form-card {
+        width: 100%;
+        max-width: 100% !important;
+        height: 100%;
+        min-height: 100%;
+        min-height: 100dvh;
+        height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+      }
+    }
+
+    /*
+     * Desktop zoom fallback:
+     * at 150-200% browser zoom, some desktops drop below 1024px and accidentally receive
+     * touch/mobile fixed-height rules. Reset those rules for mouse/trackpad devices.
+     */
+    @media (max-width: 1023px) and (hover: hover) and (pointer: fine) {
+      html,
+      body {
+        overflow: auto !important;
+        background: #ffffff !important;
+      }
+      .auth-page {
+        position: relative;
+        inset: auto;
+        height: auto;
+        min-height: 100dvh;
+        max-height: none;
+        background: transparent !important;
+      }
+      .auth-page .auth-layout {
+        height: auto;
+        min-height: 0;
+        gap: 0.75rem;
+      }
+      .auth-page .auth-layout > div:first-child {
+        height: auto;
+        min-height: 0;
+      }
+      .auth-form-card {
+        height: auto;
+        min-height: 580px;
+        max-height: none;
+        overflow: visible;
+        border-radius: 10px;
+      }
+      .auth-page .auth-image-col {
+        display: flex !important;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .auth-form-card {
+        min-height: 580px;
+        max-height: min(680px, 82vh);
+        height: min(680px, 82vh);
+        display: flex;
+        flex-direction: column;
+      }
+      .auth-form-card .auth-card-content,
+      .auth-form-card .signup-card-content {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+      #signupPage .signup-card-content .error-text {
+        margin-top: 0.125rem;
+        line-height: 1.15;
+      }
+    }
+
+    /* Desktop zoom safety: prevent overlap/clipping at 150-200% while preserving default desktop layout. */
+    @media (min-width: 1024px) and (min-resolution: 1.25dppx) {
+      .auth-page {
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      .auth-form-card {
+        height: auto;
+        max-height: none;
+      }
+      .auth-form-card .auth-card-content,
+      .auth-form-card .signup-card-content {
+        overflow: visible;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .auth-layout {
+        gap: 0.5rem;
+      }
+      .auth-card-content {
+        gap: 0.5rem;
+      }
+      /* 375px–425px: keep login content clearly inside inner card */
+      .login-card .auth-card-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+    }
+
+    /* Mobile + 150% zoom: prevent overlap (WB_012) */
+    @media (max-width: 420px) {
+      .auth-layout {
+        gap: 0.5rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+      }
+      .auth-card-content {
+        gap: 0.75rem;
+      }
+      /* Login-only: slightly more inner padding so content stays visually inside card */
+      .login-card .auth-card-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .auth-card-content > * + * {
+        margin-top: 0.25rem;
+      }
+      .font-welcome-heading {
+        letter-spacing: 0.15em;
+      }
+    }
+
+    /* High zoom or narrow: tighter spacing */
+    @media (max-width: 768px) and (min-resolution: 1.5dppx) {
+      .auth-card-content > * {
+        margin-bottom: 0.5rem;
+      }
+      .font-welcome-heading {
+        letter-spacing: 0.2em;
+      }
+    }
+
+    /* iOS Safari: match normal mobile layout and avoid overlaps (including 150% zoom) */
+    @supports (-webkit-touch-callout: none) {
+      @media (max-width: 500px) {
+        #loginPage .login-card-inner {
+          padding-top: 0.5rem;
+          padding-bottom: 0.5rem;
+        }
+        #loginPage .login-card-inner h1 {
+          margin-bottom: 0.5rem;
+        }
+        #loginPage button[type="submit"] {
+          margin-top: 0.75rem;
+        }
+        #loginPage .login-card-inner > p {
+          margin-top: 0.75rem;
+        }
+      }
+    }
+
+    /* Mobile zoom out (62–85%): inner box only, no scrollbar, content fixed inside */
+    @media (max-width: 340px) {
+      .auth-page {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .auth-form-card {
+        max-width: 100%;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      .auth-card-content,
+      .auth-form-card .signup-card-content,
+      .login-card .auth-card-content {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+      }
+      .auth-layout {
+        gap: 0.375rem;
+      }
+    }
+
+    /* Mobile high-zoom safety (180-200%): prevent clipping/overlap on small effective viewport widths. */
+    @media (max-width: 420px) {
+      .auth-form-card {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        max-height: none;
+      }
+      .auth-form-card .auth-card-content,
+      .auth-form-card .signup-card-content {
+        overflow: visible !important;
+      }
+    }
+
+    /* Very small screens (320px–380px) and all zoom, extra gap under card */
+    @media (max-width: 380px) {
+      .auth-page {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      .auth-layout {
+        gap: 0.375rem;
+      }
+      .auth-image-col {
+        max-height: 22vh;
+        margin-top: 1.25rem; /* explicit gap between card and illustration */
+      }
+      /* Keep signup padding as before; only add extra for login */
+      .auth-card-content,
+      .auth-form-card .signup-card-content {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+      }
+      .login-card .auth-card-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .font-welcome-heading {
+        letter-spacing: 0.1em;
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 1023px) {
+      .auth-form-card button[type="submit"] {
+        min-height: 44px;
+      }
+      .auth-card-content input {
+        font-size: 16px;
+      }
+    }
+
+    .password-toggle-hidden .password-toggle-btn {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #forgotPage input::placeholder {
+      color: #cccccc;
+    }
+  </style>
+</head>
+
+<body class="bg-white antialiased">
+
+  <script>
+    const BACKEND_BASE_URL = "http://18.119.210.2:5000";
+
+    /** Shown until auth API provides the real name; optional override: localStorage.stacklyDisplayName */
+    var PLANNING_DISPLAY_USER_NAME = "Pentakota Srinivas";
+
+    function initPlanningHeader() {
+      var sw = document.getElementById("planningBillingSwitch");
+      if (sw) {
+        planningApplyPlanPrices(sw.getAttribute("aria-checked") === "true");
+      }
+      var el = document.getElementById("planningDisplayUserName");
+      if (el) {
+        try {
+          var name = localStorage.getItem("stacklyDisplayName");
+          el.textContent = name && String(name).trim() ? String(name).trim() : PLANNING_DISPLAY_USER_NAME;
+        } catch (e) {
+          el.textContent = PLANNING_DISPLAY_USER_NAME;
+        }
+      }
+      setPlanningNavActive("billing");
+      planningSetView("plans");
+      planningRenderHistory();
+    }
+
+    function setPlanningNavActive(navId) {
+      ["workspace", "myWebsites", "templates", "domains", "billing"].forEach(function (id) {
+        var btn = document.getElementById("planningNav-" + id);
+        var mobileBtn = document.getElementById("planningMobile-" + id);
+        if (!btn) return;
+        if (id === navId) {
+          btn.classList.add("planning-nav-active");
+          btn.setAttribute("aria-current", "page");
+          if (mobileBtn) {
+            mobileBtn.classList.add("border-[#f0e6d4]", "bg-white/10", "text-white");
+            mobileBtn.classList.remove("border-white/25");
+          }
+        } else {
+          btn.classList.remove("planning-nav-active");
+          btn.removeAttribute("aria-current");
+          if (mobileBtn) {
+            mobileBtn.classList.remove("border-[#f0e6d4]", "bg-white/10", "text-white");
+            mobileBtn.classList.add("border-white/25", "text-white");
+          }
+        }
+      });
+    }
+
+    function planningNavClick(navId) {
+      setPlanningNavActive(navId);
+      var mobileMenu = document.getElementById("planningMobileMenu");
+      var mobileBtn = document.getElementById("planningMobileMenuBtn");
+      if (mobileMenu) mobileMenu.classList.add("hidden");
+      if (mobileBtn) mobileBtn.setAttribute("aria-expanded", "false");
+      if (navId === "billing") {
+        var target = document.getElementById("planningBillingContent");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      window.setTimeout(function () {
+        location.hash = "notFound";
+        showPage("notFound");
+      }, 140);
+    }
+
+    function togglePlanningMobileMenu(event) {
+      if (event) event.stopPropagation();
+      var menu = document.getElementById("planningMobileMenu");
+      var btn = document.getElementById("planningMobileMenuBtn");
+      if (!menu || !btn) return;
+      menu.classList.toggle("hidden");
+      var isOpen = !menu.classList.contains("hidden");
+      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+
+    function togglePlanningProfileMenu(event) {
+      if (event) event.stopPropagation();
+      var menu = document.getElementById("planningProfileMenu");
+      var btn = document.getElementById("planningProfileToggle");
+      if (!menu || !btn) return;
+      menu.classList.toggle("hidden");
+      var isOpen = !menu.classList.contains("hidden");
+      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+
+    document.addEventListener("click", function (e) {
+      var wrap = document.getElementById("planningProfileWrap");
+      var menu = document.getElementById("planningProfileMenu");
+      if (!wrap || !menu || menu.classList.contains("hidden")) return;
+      if (!wrap.contains(e.target)) {
+        menu.classList.add("hidden");
+        var btn = document.getElementById("planningProfileToggle");
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    document.addEventListener("click", function (e) {
+      var mobileWrap = document.getElementById("planningMobileWrap");
+      var mobileMenu = document.getElementById("planningMobileMenu");
+      if (!mobileWrap || !mobileMenu || mobileMenu.classList.contains("hidden")) return;
+      if (!mobileWrap.contains(e.target)) {
+        mobileMenu.classList.add("hidden");
+        var mobileBtn = document.getElementById("planningMobileMenuBtn");
+        if (mobileBtn) mobileBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    /** Monthly / yearly totals for plan cards (must match app/planning/page.tsx) */
+    var PLANNING_PLAN_PRICES = {
+      monthly: [
+        { period: "Per month", old: "$80", save: "Save 50%", new: "$40" },
+        { period: "Per month", old: "$300", save: "Save 50%", new: "$150" },
+        { period: "Per month", old: "$400", save: "Save 30%", new: "$280" }
+      ],
+      yearly: [
+        { period: "Per year", old: "$960", save: "Save 58%", new: "$403" },
+        { period: "Per year", old: "$3,600", save: "Save 58%", new: "$1,512" },
+        { period: "Per year", old: "$4,800", save: "Save 30%", new: "$3,360" }
+      ]
+    };
+
+    var planningView = "plans";
+    var planningSelectedPlanIndex = 0;
+    var planningIsFreeCheckout = false;
+    var planningHistoryFilterYear = "this";
+    var planningInvoiceData = null;
+
+    var PLANNING_BILLING_HISTORY_KEY = "stacklyPlanningBillingHistory";
+
+    function planningDefaultHistoryRows() {
+      return [
+        { date: "Apr 02 2026", invoiceId: "INV-200987", amount: "$39.00", status: "Paid" },
+        { date: "Mar 15 2026", invoiceId: "INV-121289", amount: "$39.00", status: "Paid" },
+        { date: "Feb 08 2026", invoiceId: "INV-100123", amount: "$39.00", status: "Paid" },
+        { date: "Jan 20 2026", invoiceId: "INV-100154", amount: "$39.00", status: "Paid" },
+        { date: "Dec 20 2025", invoiceId: "INV-101164", amount: "$39.00", status: "Paid" },
+        { date: "Dec 10 2025", invoiceId: "INV-100140", amount: "$0.00", status: "Free" },
+        { date: "Nov 20 2025", invoiceId: "INV-100100", amount: "$0.00", status: "Free" },
+        { date: "Oct 08 2025", invoiceId: "INV-100240", amount: "$0.00", status: "Free" }
+      ];
+    }
+
+    function planningLoadHistoryFromStorage() {
+      try {
+        var raw = localStorage.getItem(PLANNING_BILLING_HISTORY_KEY);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) return null;
+        var rows = parsed.filter(function (e) {
+          return e && typeof e.date === "string" && typeof e.invoiceId === "string" && typeof e.amount === "string" && (e.status === "Paid" || e.status === "Free");
+        });
+        return rows.length ? rows : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function planningSaveHistoryToStorage() {
+      try {
+        localStorage.setItem(PLANNING_BILLING_HISTORY_KEY, JSON.stringify(planningHistory));
+      } catch (e) {}
+    }
+
+    var planningHistory = planningLoadHistoryFromStorage() || planningDefaultHistoryRows();
+
+    function planningHistoryYearFromDate(dateText) {
+      var m = String(dateText || "").match(/(\d{4})$/);
+      return m ? Number(m[1]) : NaN;
+    }
+
+    function planningGetHistoryYears() {
+      var seen = {};
+      var years = [];
+      [new Date().getFullYear(), 2026, 2025, 2024, 2023, 2022, 2021].forEach(function (y) {
+        if (!seen[y]) {
+          seen[y] = true;
+          years.push(y);
+        }
+      });
+      planningHistory.forEach(function (entry) {
+        var y = planningHistoryYearFromDate(entry.date);
+        if (!Number.isFinite(y) || seen[y]) return;
+        seen[y] = true;
+        years.push(y);
+      });
+      years.sort(function (a, b) { return b - a; });
+      return years;
+    }
+
+    function planningGetActiveHistoryYear() {
+      return planningHistoryFilterYear === "this" ? new Date().getFullYear() : Number(planningHistoryFilterYear);
+    }
+
+    function planningSetHistoryFilterYear(value) {
+      planningHistoryFilterYear = value || "this";
+      planningRenderHistory();
+      planningSyncHistoryYearSelect();
+    }
+
+    function planningSyncHistoryYearSelect() {
+      var sel = document.getElementById("planningHistoryYearSelect");
+      if (!sel) return;
+      var years = planningGetHistoryYears();
+      var opts = "<option value='this'>This Year</option>";
+      years.forEach(function (y) {
+        opts += "<option value='" + y + "'>" + y + "</option>";
+      });
+      sel.innerHTML = opts;
+      sel.value = planningHistoryFilterYear;
+      sel.style.fontWeight = planningHistoryFilterYear === "all" ? "500" : "700";
+      var allBtn = document.getElementById("planningHistoryAllBtn");
+      if (allBtn) {
+        allBtn.style.background = planningHistoryFilterYear === "all" ? "#eef2ff" : "transparent";
+        allBtn.style.fontWeight = planningHistoryFilterYear === "all" ? "700" : "500";
+      }
+    }
+
+    function planningBackToPlans() {
+      planningSetView("plans");
+    }
+
+    function planningSetView(view) {
+      planningView = view;
+      var ids = ["planningPlansView", "planningPaymentView", "planningInvoiceView", "planningHistoryView"];
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if ((view === "plans" && id === "planningPlansView") ||
+            (view === "payment" && id === "planningPaymentView") ||
+            (view === "invoice" && id === "planningInvoiceView") ||
+            (view === "history" && id === "planningHistoryView")) {
+          el.classList.remove("hidden");
+        } else {
+          el.classList.add("hidden");
+        }
+      });
+    }
+
+    function planningGetActivePrice(index) {
+      var sw = document.getElementById("planningBillingSwitch");
+      var yearly = sw && sw.getAttribute("aria-checked") === "true";
+      var row = (yearly ? PLANNING_PLAN_PRICES.yearly : PLANNING_PLAN_PRICES.monthly)[index] || PLANNING_PLAN_PRICES.monthly[0];
+      return { amount: row.new, period: yearly ? "Yearly" : "Monthly" };
+    }
+
+    function planningCardNumberInput(el) {
+      el.value = el.value.replace(/\D/g, "").slice(0, 19);
+    }
+
+    function planningCardExpiryInput(el) {
+      var d = el.value.replace(/\D/g, "").slice(0, 4);
+      el.value = d.length <= 2 ? d : d.slice(0, 2) + "/" + d.slice(2);
+    }
+
+    function planningCardCvvInput(el) {
+      el.value = el.value.replace(/\D/g, "").slice(0, 4);
+    }
+
+    function planningPaymentSubtitleFor(method) {
+      var map = {
+        paypal: "Sign in with PayPal to complete your upgrade.",
+        card: "Enter your card details to upgrade.",
+        netbanking: "Choose your bank and authorize payment.",
+        online: "Pay with UPI — open your app or enter your UPI ID."
+      };
+      return map[method] || "Enter your payment details to Upgrade";
+    }
+
+    function planningGetPaymentMethod() {
+      var r = document.querySelector('input[name="planningPm"]:checked');
+      return r && r.value ? r.value : "card";
+    }
+
+    function planningSyncOnlinePaymentHint() {
+      var hint = document.getElementById("planningOnlinePaymentHint");
+      if (!hint) return;
+      var w = document.querySelector('input[name="planningOnlineWallet"]:checked');
+      var which = w && w.value === "phonepe" ? "phonepe" : "gpay";
+      hint.textContent =
+        which === "gpay"
+          ? "Open Google Pay and approve the request, or pay with your UPI ID above."
+          : "Open PhonePe and approve the request, or pay with your UPI ID above.";
+    }
+
+    function planningSyncPaymentMethodUI() {
+      var method = planningGetPaymentMethod();
+      var sub = document.getElementById("planningPaymentSubtitle");
+      if (sub) sub.textContent = planningPaymentSubtitleFor(method);
+      var panels = {
+        paypal: "planningPaymentPanelPaypal",
+        card: "planningPaymentPanelCard",
+        netbanking: "planningPaymentPanelNetbanking",
+        online: "planningPaymentPanelOnline"
+      };
+      Object.keys(panels).forEach(function (k) {
+        var el = document.getElementById(panels[k]);
+        if (!el) return;
+        if (k === method) el.classList.remove("hidden");
+        else el.classList.add("hidden");
+      });
+      planningSyncOnlinePaymentHint();
+    }
+
+    function planningResetPaymentForm() {
+      var cardRadio = document.querySelector('input[name="planningPm"][value="card"]');
+      if (cardRadio) cardRadio.checked = true;
+      var paypalEmail = document.getElementById("planningPaypalEmail");
+      if (paypalEmail) paypalEmail.value = "";
+      var cn = document.getElementById("planningCardNumber");
+      var ce = document.getElementById("planningCardExpiry");
+      var cv = document.getElementById("planningCardCvv");
+      if (cn) cn.value = "";
+      if (ce) ce.value = "";
+      if (cv) cv.value = "";
+      var nb = document.getElementById("planningNetBank");
+      if (nb) nb.value = "";
+      var upi = document.getElementById("planningUpiId");
+      if (upi) upi.value = "";
+      var gpay = document.querySelector('input[name="planningOnlineWallet"][value="gpay"]');
+      if (gpay) gpay.checked = true;
+      planningSyncPaymentMethodUI();
+    }
+
+    function planningOpenPayment(planIndex, freeCheckout) {
+      planningSelectedPlanIndex = planIndex || 0;
+      planningIsFreeCheckout = !!freeCheckout;
+      planningResetPaymentForm();
+      planningSetView("payment");
+    }
+
+    function planningCompletePayment() {
+      var btn = document.getElementById("planningCompletePaymentBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Processing payment...";
+      }
+      window.setTimeout(function () {
+        var p = planningGetActivePrice(planningSelectedPlanIndex);
+        var names = ["Basic", "Business Plan", "Advanced"];
+        var now = new Date();
+        var invoiceId = "INV-" + Math.floor(100000 + Math.random() * 899999);
+        var finalAmount = planningIsFreeCheckout ? "$0" : p.amount;
+        planningInvoiceData = {
+          invoiceId: invoiceId,
+          date: now.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
+          planName: names[planningSelectedPlanIndex] + " (" + (planningIsFreeCheckout ? "Free" : p.period) + ")",
+          amount: finalAmount,
+          name: PLANNING_DISPLAY_USER_NAME,
+          email: "srinu@gmail.com",
+          contactNo: "9848xxxx19",
+          address: "Chennai - 636008"
+        };
+        var newRow = {
+          date: planningInvoiceData.date,
+          invoiceId: planningInvoiceData.invoiceId,
+          amount: planningInvoiceData.amount,
+          status: planningIsFreeCheckout ? "Free" : "Paid"
+        };
+        planningHistory = [newRow].concat(
+          planningHistory.filter(function (e) {
+            return e.invoiceId !== newRow.invoiceId;
+          })
+        );
+        planningSaveHistoryToStorage();
+        planningRenderInvoice();
+        planningRenderHistory();
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Complete Payment";
+        }
+        planningIsFreeCheckout = false;
+        planningSetView("invoice");
+      }, 2400);
+    }
+
+    function planningRenderInvoice() {
+      if (!planningInvoiceData) return;
+      var map = {
+        planningInvoiceId: planningInvoiceData.invoiceId,
+        planningInvoiceDate: planningInvoiceData.date,
+        planningInvoicePlan: planningInvoiceData.planName,
+        planningInvoiceAmount: planningInvoiceData.amount,
+        planningInvoiceName: planningInvoiceData.name,
+        planningInvoiceEmail: planningInvoiceData.email,
+        planningInvoiceContact: planningInvoiceData.contactNo,
+        planningInvoiceAddress: planningInvoiceData.address
+      };
+      Object.keys(map).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = map[id];
+      });
+    }
+
+    function planningRenderHistory() {
+      var tbody = document.getElementById("planningHistoryTbody");
+      if (!tbody) return;
+      var rows = planningHistoryFilterYear === "all"
+        ? planningHistory
+        : planningHistory.filter(function (entry) {
+            return planningHistoryYearFromDate(entry.date) === planningGetActiveHistoryYear();
+          });
+      tbody.innerHTML = rows.map(function (entry) {
+        var badge = entry.status === "Paid" ? "#4f8f43" : "#667085";
+        return "<tr style='border-top:1px solid #e2e8f0'>"
+          + "<td class='px-3 py-3.5'>" + entry.date + "</td>"
+          + "<td class='px-3 py-3.5'>" + entry.invoiceId + "</td>"
+          + "<td class='px-3 py-3.5'>" + entry.amount + "</td>"
+          + "<td class='px-3 py-3.5'><span class='inline-flex min-w-[56px] justify-center rounded-md px-2 py-1 text-[10px] font-bold text-white' style='background:" + badge + "'>" + entry.status + "</span></td>"
+          + "<td class='px-3 py-3.5'><span class='inline-flex h-6 w-7 items-center justify-center rounded-md text-xs font-bold text-white' style='background:#1e7fd8'>↓</span></td>"
+          + "</tr>";
+      }).join("");
+      planningSyncHistoryYearSelect();
+    }
+
+    function planningApplyPlanPrices(yearly) {
+      var tier = yearly ? "yearly" : "monthly";
+      var rows = PLANNING_PLAN_PRICES[tier];
+      var ids = [
+        { period: "planningPriceBasicPeriod", old: "planningPriceBasicOld", save: "planningPriceBasicSave", chip: "planningPriceBasicNew" },
+        { period: "planningPriceBusinessPeriod", old: "planningPriceBusinessOld", save: "planningPriceBusinessSave", chip: "planningPriceBusinessNew" },
+        { period: "planningPriceAdvancedPeriod", old: "planningPriceAdvancedOld", save: "planningPriceAdvancedSave", chip: "planningPriceAdvancedNew" }
+      ];
+      for (var i = 0; i < 3; i++) {
+        var p = rows[i];
+        var el = ids[i];
+        var nodePeriod = document.getElementById(el.period);
+        var nodeOld = document.getElementById(el.old);
+        var nodeSave = document.getElementById(el.save);
+        var nodeNew = document.getElementById(el.chip);
+        if (nodePeriod) nodePeriod.textContent = p.period;
+        if (nodeOld) nodeOld.textContent = p.old;
+        if (nodeSave) nodeSave.textContent = p.save;
+        if (nodeNew) nodeNew.textContent = p.new;
+      }
+    }
+
+    function planningSetBilling(yearly) {
+      var sw = document.getElementById("planningBillingSwitch");
+      var knob = document.getElementById("planningBillingKnob");
+      var lm = document.getElementById("planningLabelMonthly");
+      var ly = document.getElementById("planningLabelYearly");
+      if (!sw || !knob || !lm || !ly) return;
+      sw.setAttribute("aria-checked", yearly ? "true" : "false");
+      knob.classList.toggle("translate-x-0", !yearly);
+      knob.classList.toggle("translate-x-6", yearly);
+      lm.classList.toggle("planning-billing-label--active", !yearly);
+      ly.classList.toggle("planning-billing-label--active", yearly);
+      planningApplyPlanPrices(yearly);
+    }
+
+    function planningToggleBilling() {
+      var sw = document.getElementById("planningBillingSwitch");
+      if (!sw) return;
+      var yearly = sw.getAttribute("aria-checked") === "true";
+      planningSetBilling(!yearly);
+    }
+//--------forgot password----------
+    let isChangeMode = false;
+    let primaryUserValue = "";
+
+    function updateForgotPlaceholder() {
+      var forgotInput = document.getElementById("forgotEmail");
+      if (!forgotInput) return;
+      if (window._forgotChangeFrom === "verifyEmail") {
+        forgotInput.placeholder = "Alternative email address";
+      } else if (window._forgotChangeFrom === "verifyMobile") {
+        forgotInput.placeholder = "Alternative mobile number";
+      } else {
+        forgotInput.placeholder = "Email or mobile number";
+      }
+    }
+
+    function resetForgotPage() {
+      const inputEl = document.getElementById("forgotEmail");
+      const errEl = document.getElementById("forgotEmailError");
+      const msgEl = document.getElementById("forgotFormMessage");
+
+      if (inputEl) inputEl.value = "";          // ✅ clear input
+      if (errEl) errEl.innerText = "";          // ✅ clear error
+      if (msgEl) msgEl.innerText = "";          // ✅ clear success message
+    }
+
+      function resetToNormalForgot() {
+      isChangeMode = false;
+      primaryUserValue = "";
+      window._forgotChangeFrom = "";
+
+      resetForgotPage();
+      showPage("forgot");
+    }
+
+    function openForgotPage(changeFrom) {
+      window._forgotChangeFrom = changeFrom || "";
+
+      if (changeFrom) {
+        isChangeMode = true;
+
+        // get original user (very important)
+        primaryUserValue = localStorage.getItem("forgotContact");
+      } else {
+        isChangeMode = false;
+        primaryUserValue = "";
+      }
+
+      resetForgotPage();
+      location.hash = "forgot";
+      showPage("forgot");
+    }
+
+    function showPage(page) {
+      var pages = ["buyscreen", "planning", "signup", "login", "error", "notFound", "forgot", "verifyEmail", "verifyMobile", "verified", "createNewPassword"];
+      pages.forEach(function (key) {
+        var el = document.getElementById(key + "Page");
+        if (el) el.classList.add("hidden");
+      });
+      var active = document.getElementById(page + "Page");
+      if (active) active.classList.remove("hidden");
+      var isAuth = (page === "login" || page === "signup");
+      document.body.classList.toggle("auth-visible", isAuth);
+      // Keep page scroll available on desktop zoom (150-200%) to avoid clipped auth content.
+      document.body.style.overflow = "";
+      resetForgotPage();  
+      updateForgotPlaceholder();
+      if (page === "forgot") updateForgotPlaceholder();
+      //-----------------forgot page------------------------
+      if (page === "planning") initPlanningHeader();
+    }
+
+    function setupAuthPullToRefresh() {
+      var authPages = [
+        document.getElementById("loginPage"),
+        document.getElementById("signupPage")
+      ].filter(Boolean);
+
+      authPages.forEach(function (page) {
+        if (page._pullRefreshBound) return;
+        page._pullRefreshBound = true;
+
+        var startY = 0;
+        var canPull = false;
+        var triggered = false;
+        var threshold = 88;
+
+        page.addEventListener("touchstart", function (event) {
+          if (window.innerWidth >= 1024 || event.touches.length !== 1) return;
+          startY = event.touches[0].clientY;
+          canPull = page.scrollTop <= 0;
+          triggered = false;
+        }, { passive: true });
+
+        page.addEventListener("touchmove", function (event) {
+          if (!canPull || triggered || window.innerWidth >= 1024) return;
+          var deltaY = event.touches[0].clientY - startY;
+          if (deltaY > threshold && page.scrollTop <= 0) {
+            triggered = true;
+            window.location.reload();
+          } else if (deltaY < 0) {
+            canPull = false;
+          }
+        }, { passive: true });
+
+        page.addEventListener("touchend", function () {
+          canPull = false;
+          triggered = false;
+        });
+
+        page.addEventListener("touchcancel", function () {
+          canPull = false;
+          triggered = false;
+        });
+      });
+    }
+
+    window.addEventListener("resize", function () {
+    });
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function isMobile(value) {
+      return /^[0-9]{10}$/.test(value.trim());
+    }
+
+    async function handleSignup() {
+      const name = document.getElementById("signupName").value.trim();
+      const email = document.getElementById("signupEmail").value.trim();
+      const mobile = document.getElementById("signupMobile").value.trim();
+      const password = document.getElementById("signupPassword").value;
+      const confirmPassword = document.getElementById("signupConfirmPassword").value;
+ 
+      const nameError = document.getElementById("signupNameError");
+      const emailError = document.getElementById("signupEmailError");
+      const mobileError = document.getElementById("signupMobileError");
+      const passwordError = document.getElementById("signupPasswordError");
+      const confirmPasswordError = document.getElementById("signupConfirmPasswordError");
+      const formError = document.getElementById("signupFormError");
+ 
+      nameError.innerText = "";
+      emailError.innerText = "";
+      if (mobileError) mobileError.innerText = "";
+      passwordError.innerText = "";
+      if (confirmPasswordError) confirmPasswordError.innerText = "";
+      if (formError) formError.innerText = "";
+ 
+      let valid = true;
+      if (name === "") {
+        nameError.innerText = "Name is required";
+        valid = false;
+      } else if (name.length < 2) {
+        nameError.innerText = "Name must be at least 2 characters";
+        valid = false;
+      } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+        nameError.innerText = "Name must contain only letters";
+        valid = false;
+ 
+      }
+      if (!validateEmail(email)) {
+        emailError.innerText = "Enter valid email";
+        valid = false;
+ 
+      }
+     
+      if (!mobile) {
+      mobileError.innerText = "Mobile number is required";
+      valid = false;
+ 
+      } else if (!/^[1-9][0-9]{9}$/.test(mobile)) {
+     mobileError.innerText = "Invalid mobile number";
+     valid = false;
+ 
+     } else if (/^(\d)\1{9}$/.test(mobile)) {
+     mobileError.innerText = "Invalid number";
+     
+     valid = false;
+     }
+      if (password.length < 8) {
+        passwordError.innerText = "Password must be at least 8 characters";
+        valid = false;
+      } else {
+        var hasLower = /[a-z]/.test(password);
+        var hasUpper = /[A-Z]/.test(password);
+        var hasNumber = /[0-9]/.test(password);
+        var hasSpecial = /[!@#$%^&*(),.?\x3a{}|<>]/.test(password);
+        if (!hasLower) {
+          passwordError.innerText = "Password must include a lowercase letter";
+          valid = false;
+        } else if (!hasUpper) {
+          passwordError.innerText = "Password must include an uppercase letter";
+          valid = false;
+        } else if (!hasNumber) {
+          passwordError.innerText = "Password must include a number";
+          valid = false;
+        } else if (!hasSpecial) {
+          passwordError.innerText = "Password must include a special character (!@#$%^&* etc.)";
+          valid = false;
+        }
+      }
+      if (!confirmPassword) {
+        if (confirmPasswordError) confirmPasswordError.innerText = "Please confirm your password";
+        valid = false;
+      } else if (password !== confirmPassword) {
+        if (confirmPasswordError) confirmPasswordError.innerText = "Passwords do not match";
+        valid = false;
+      }
+      if (!valid) return;
+ 
+      try {
+        const body = { name: name, email: email.toLowerCase(), mobile:mobile, password: password, confirmPassword:confirmPassword };
+        const res = await fetch(BACKEND_BASE_URL + "/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(function () { return {}; });
+        if (!res.ok) {
+        if (formError) formError.innerText = data.message || "Registration failed";
+        return;
+        }
+        alert("Signup successful! Redirecting to login...");
+ 
+        setTimeout(() => {
+        window.location.hash = "login";
+        showPage("login");
+        }, 3000);
+ 
+      } catch (e) {
+        history.pushState(null, "", "#error");
+        showPage("error");
+      }
+    }
+
+
+     async function handleLogin() {
+     const email = document.getElementById("loginEmail").value.trim();
+     const password = document.getElementById("loginPassword").value;
+
+     const emailError = document.getElementById("loginEmailError");
+     const passwordError = document.getElementById("loginPasswordError");
+     const formError = document.getElementById("loginFormError");
+
+     emailError.innerText = "";
+     passwordError.innerText = "";
+     if (formError) formError.innerText = "";
+
+     let valid = true;
+     var isEmail = validateEmail(email);
+     var isMobileLogin = isMobile(email);
+
+     if (!isEmail && !isMobileLogin) {
+     emailError.innerText = "Enter valid email or mobile number";
+     valid = false;
+  }
+
+     if (!password || password.length < 8) {
+     passwordError.innerText = "Enter valid password";
+     valid = false;
+  }
+
+     if (!valid) return;
+
+     try {
+     // ✅ CHANGE STARTS HERE
+     let body = {
+      password: password
+    };
+
+    if (isEmail) {
+      body.email = email.toLowerCase();
+    } else {
+      body.mobile = email;
+    }
+    // ✅ CHANGE ENDS HERE
+
+    const res = await fetch(BACKEND_BASE_URL + "/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json().catch(function () { return {}; });
+
+    if (!res.ok) {
+      if (formError) formError.innerText = data.message || "Login failed. Please try again";
+      return;
+    }
+    
+    alert("Login successful!");
+    window.location.href =
+    "https://ashith-stackly.github.io/Website-Builder-Application/landing/";
+ 
+  } catch (e) {
+    history.pushState(null, "", "#error");
+    showPage("error");
+  }
+}
+      
+
+  async function handleForgotPassword() {
+
+  const input = document.getElementById("forgotEmail").value.trim();
+  const errEl = document.getElementById("forgotEmailError");
+  const msgEl = document.getElementById("forgotFormMessage");
+
+  errEl.innerText = "";
+  if (msgEl) msgEl.innerText = "";
+
+  if (!input) {
+    errEl.innerText = "Enter email or mobile";
+    return;
+  }
+
+  try {
+    const res = await fetch(BACKEND_BASE_URL + "/api/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        input: input,
+        isChange: isChangeMode,
+        primaryUser: primaryUserValue
+      })
+    });
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (e) {
+      console.error("JSON parse error:", e);
+    }
+
+    if (res.ok) {
+
+      // ✅ show success alert ONLY for change mode
+      if (isChangeMode) {
+        alert("Alternate added successfully");
+        isChangeMode = false; // reset mode
+      }
+
+      // ✅ store contact (used in verify page)
+      window._lastForgotContact = input;
+      localStorage.setItem("forgotContact", input);
+
+      // ✅ show OTP message
+      if (msgEl) {
+        msgEl.innerText = "OTP sent successfully";
+      }
+
+      // ✅ show OTP (testing)
+      if (data.otp) {
+        alert("Your OTP is: " + data.otp);
+      }
+
+      // ✅ common navigation for both modes
+      const isEmail = input.includes("@");
+
+      setTimeout(() => {
+              if (isEmail) {
+          showPage("verifyEmail");
+
+          // ✅ ADD THIS FOR EMAIL
+          clearOtpMessages();
+          clearOtpBoxes("email");
+          startOtpExpiryTimer("email");
+
+        } else {
+          showPage("verifyMobile");
+
+          // ✅ ADD THIS FOR MOBILE
+          clearOtpMessages();
+          clearOtpBoxes("mobile");
+          startOtpExpiryTimer("mobile");
+        }
+      }, 1000);
+    }
+
+    
+     else {
+        const message = data.message || "Something went wrong";
+        msgEl.innerText = message;
+
+        if (
+          (data.message === "Maximum 2 email alternates allowed" ||
+          data.message === "Maximum 2 mobile alternates allowed") &&
+          Array.isArray(data.alternates)
+        ) {
+          msgEl.innerHTML =
+            data.message +
+            "<br><br><b>Already added:</b><br>" +
+            data.alternates.map(a => `• ${a}`).join("<br>");
+        }
+
+      // ===== MODE CONTROL =====
+      if (isChangeMode) {
+
+        // PRIMARY ERRORS → stay in change mode
+        if (
+          message.includes("Primary user") ||
+          message.includes("Cannot use primary") ||
+          message.includes("must be")||
+          message.includes("Already")
+        ) {
+          setTimeout(() => {
+            resetForgotPage();   // stay in change mode
+          }, 5000);
+        }
+
+        // LIMIT / DUPLICATE → switch to normal mode
+        else if (
+          message.includes("Maximum") 
+        ) {
+          setTimeout(() => {
+            resetToNormalForgot();   // switch to normal
+          }, 5000);
+        }
+      }
+    }
+  } catch (err) {
+      console.error(err);
+      alert("Network or server error");
+
+      }
+}
+
+    // Show correct page on initial load based on URL hash
+    // Direct links (same format as index.html#verifyMobile):
+    //   index.html#planning | index.html#signup | index.html#login | index.html#forgot
+    //   index.html#verifyEmail | index.html#verifyMobile
+    //   index.html#verified | index.html#createNewPassword
+    // Supported: #planning, #signup, #login, #forgot, #verifyEmail, #verifyMobile, #verified, #createNewPassword, #error
+    document.addEventListener("DOMContentLoaded", function () {
+      const hash = window.location.hash.replace("#", "");
+      if (hash === "planning") showPage("planning");
+      else if (hash === "signup") showPage("signup");
+      else if (hash === "forgot") showPage("forgot");
+      else if (hash === "verifyEmail") showPage("verifyEmail");
+      else if (hash === "verifyMobile") showPage("verifyMobile");
+      else if (hash === "verified") showPage("verified");
+      else if (hash === "createNewPassword") showPage("createNewPassword");
+      else if (hash === "error") showPage("error");
+      else if (hash === "notFound") showPage("notFound");
+      else showPage("login");
+      setupAuthPullToRefresh();
+      updateVerifyOtpButtons();
+    });
+
+    window.addEventListener("hashchange", function () {
+      const hash = window.location.hash.replace("#", "");
+      if (hash === "planning") showPage("planning");
+      else if (hash === "signup") showPage("signup");
+      else if (hash === "forgot") showPage("forgot");
+      else if (hash === "verifyEmail") showPage("verifyEmail");
+      else if (hash === "verifyMobile") showPage("verifyMobile");
+      else if (hash === "verified") showPage("verified");
+      else if (hash === "createNewPassword") showPage("createNewPassword");
+      else if (hash === "error") showPage("error");
+      else if (hash === "notFound") showPage("notFound");
+      else showPage("login");
+    });
+
+    window.addEventListener("popstate", function () {
+      const hash = window.location.hash.replace("#", "");
+      if (hash === "planning") showPage("planning");
+      else if (hash === "signup") showPage("signup");
+      else if (hash === "forgot") showPage("forgot");
+      else if (hash === "verifyEmail") showPage("verifyEmail");
+      else if (hash === "verifyMobile") showPage("verifyMobile");
+      else if (hash === "verified") showPage("verified");
+      else if (hash === "createNewPassword") showPage("createNewPassword");
+      else if (hash === "error") showPage("error");
+      else if (hash === "notFound") showPage("notFound");
+      else showPage("login");
+    });
+
+    window.addEventListener("resize", function () {
+      var hash = window.location.hash.replace("#", "");
+      if (hash === "login" || hash === "signup") {
+        document.body.style.overflow = "";
+      }
+    });
+
+    function toggleSignupPasswordVisibility() {
+      var input = document.getElementById("signupPassword");
+      var btn = document.getElementById("signupPasswordToggle");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        btn.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+    function toggleLoginPasswordVisibility() {
+      var input = document.getElementById("loginPassword");
+      var btn = document.getElementById("loginPasswordToggle");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        btn.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+    function updateSignupPasswordToggleVisibility() {
+      var input = document.getElementById("signupPassword");
+      var wrap = document.getElementById("signupPasswordWrap");
+      if (/[a-zA-Z0-9]/.test(input.value)) wrap.classList.remove("password-toggle-hidden"); else wrap.classList.add("password-toggle-hidden");
+    }
+
+    function toggleSignupConfirmPasswordVisibility() {
+      var input = document.getElementById("signupConfirmPassword");
+      var btn = document.getElementById("signupConfirmPasswordToggle");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        btn.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+    function updateSignupConfirmPasswordToggleVisibility() {
+      var input = document.getElementById("signupConfirmPassword");
+      var wrap = document.getElementById("signupConfirmPasswordWrap");
+      if (input && wrap && /[a-zA-Z0-9]/.test(input.value)) wrap.classList.remove("password-toggle-hidden"); else if (wrap) wrap.classList.add("password-toggle-hidden");
+    }
+
+    function updateLoginPasswordToggleVisibility() {
+      var input = document.getElementById("loginPassword");
+      var wrap = document.getElementById("loginPasswordWrap");
+      if (/[a-zA-Z0-9]/.test(input.value)) wrap.classList.remove("password-toggle-hidden"); else wrap.classList.add("password-toggle-hidden");
+    }
+
+    function updateVerifyOtpButtons() {
+      var emailComplete = true;
+      for (var i = 0; i < 4; i++) {
+        var inp = document.getElementById("emailOtp" + i);
+        if (!inp || !inp.value.trim()) {
+          emailComplete = false;
+          break;
+        }
+      }
+      var emailBtn = document.getElementById("verifyEmailConfirmBtn");
+      if (emailBtn) emailBtn.disabled = !emailComplete;
+
+      var mobileComplete = true;
+      for (var j = 0; j < 4; j++) {
+        var minp = document.getElementById("mobileOtp" + j);
+        if (!minp || !minp.value.trim()) {
+          mobileComplete = false;
+          break;
+        }
+      }
+      var mobileBtn = document.getElementById("verifyMobileConfirmBtn");
+      if (mobileBtn) mobileBtn.disabled = !mobileComplete;
+    }
+
+    function handleOtpInput(group, index, event) {
+      var input = event.target;
+      input.value = input.value.replace(/[^0-9]/g, "").slice(0, 1);
+      if (input.value && index < 3) {
+        var next = document.getElementById(group + "Otp" + (index + 1));
+        if (next) next.focus();
+      }
+      updateVerifyOtpButtons();
+    }
+
+    function clearOtpMessages() {
+  // Email errors
+  const emailOtpErr = document.getElementById("verifyEmailOtpError");
+  const emailResendMsg = document.getElementById("verifyEmailResendMessage");
+
+  // Mobile errors
+  const mobileOtpErr = document.getElementById("verifyMobileOtpError");
+  const mobileResendMsg = document.getElementById("verifyMobileResendMessage");
+
+  if (emailOtpErr) emailOtpErr.innerText = "";
+  if (emailResendMsg) emailResendMsg.innerText = "";
+
+  if (mobileOtpErr) mobileOtpErr.innerText = "";
+  if (mobileResendMsg) mobileResendMsg.innerText = "";
+  }
+
+  function clearOtpBoxes(type) {
+  for (let i = 0; i < 4; i++) {
+    const otpInput = document.getElementById(`${type}Otp${i}`);
+    if (otpInput) otpInput.value = "";
+  }
+
+  // Focus first input
+  document.getElementById(`${type}Otp0`)?.focus();
+  }
+
+  // Clear both OTPs
+  function clearAllOtpBoxes() {
+    clearOtpBoxes("email");
+    clearOtpBoxes("mobile");
+  }
+
+  // Page refresh
+  window.addEventListener("load", function () {
+    clearAllOtpBoxes();
+  });
+
+  // Browser back button
+  window.addEventListener("pageshow", function () {
+    clearAllOtpBoxes();
+  });
+
+  let otpExpiryIntervals = {
+  email: null,
+  mobile: null
+};
+
+function startOtpExpiryTimer(type) {
+  clearInterval(otpExpiryIntervals[type]);
+
+  let seconds = 60;
+
+  const messageEl =
+    type === "email"
+      ? document.getElementById("emailOtpExpiryMessage")
+      : document.getElementById("mobileOtpExpiryMessage");
+
+  function updateTimer() {
+    if (seconds > 0) {
+      if (messageEl) {
+        messageEl.textContent = `OTP expires in ${seconds} s`;
+      }
+      seconds--;
+    }else {
+      clearInterval(otpExpiryIntervals[type]);
+
+      if (messageEl) {
+        messageEl.textContent =
+          "OTP expired. Please Resend code.";
+      }
+
+      // clear OTP boxes
+      clearOtpBoxes(type);
+
+      // block confirm button
+      blockConfirm(type);
+
+      for (let i = 0; i < 4; i++) {
+  const otpInput = document.getElementById(`${type}Otp${i}`);
+  if (otpInput) otpInput.disabled = true;
+}
+      updateVerifyOtpButtons();
+    }
+  }
+
+  updateTimer();
+
+  otpExpiryIntervals[type] = setInterval(updateTimer, 1000);
+}
+
+  let otpBlocked = {
+    email: false,
+    mobile: false
+  };
+
+  function blockConfirm(type) {
+  otpBlocked[type] = true;
+
+  const btnId =
+    type === "mobile"
+      ? "verifyMobileConfirmBtn"
+      : "verifyEmailConfirmBtn";
+
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+
+  btn.disabled = true;
+
+  if (!btn.dataset.originalText) {
+    btn.dataset.originalText = btn.textContent;
+  }
+
+  btn.textContent = btn.dataset.originalText || "Confirm";
+}
+
+function unblockConfirm(type) {
+  // 🔴 THIS IS THE MISSING FIX
+  otpBlocked[type] = false;
+
+  const btnId =
+    type === "mobile"
+      ? "verifyMobileConfirmBtn"
+      : "verifyEmailConfirmBtn";
+
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+
+  btn.disabled = false;
+  btn.textContent = btn.dataset.originalText || "Confirm";
+}
+
+
+  function resendCode(type) {
+
+  const msgId =
+    type === "email"
+      ? "verifyEmailResendMessage"
+      : "verifyMobileResendMessage";
+
+  const el = document.getElementById(msgId);
+
+  const contact = localStorage.getItem("forgotContact");
+
+  if (!contact) {
+    if (el) el.innerText = "Session expired. Please try again.";
+    showPage("forgot");
+    return;
+  }
+
+  const url =
+    type === "email"
+      ? "/api/auth/verify-otp-email"
+      : "/api/auth/verify-otp-mobile";
+
+  const bodyData =
+    type === "email"
+      ? { email: contact, action: "resend" }
+      : { mobile: contact, action: "resend" };
+
+  if (el) el.innerText = "Sending OTP...";
+
+  fetch(BACKEND_BASE_URL + url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bodyData)
+  })
+    .then(res => res.json().then(data => ({ res, data })))
+    .then(({ res, data }) => {
+
+      if (res.ok) {
+
+        if (el) el.innerText = "OTP sent successfully";
+
+        if (data.otp) {
+          alert(" Resend OTP: " + data.otp);
+        }
+
+        // re-enable OTP inputs
+        for (let i = 0; i < 4; i++) {
+          const otpInput =
+            document.getElementById(`${type}Otp${i}`);
+
+          if (otpInput) {
+            otpInput.disabled = false;
+          }
+        }
+
+        // re-enable confirm button
+        unblockConfirm(type);
+
+        // clear old OTP
+        clearOtpBoxes(type);
+
+        // restart timer
+        clearInterval(otpExpiryIntervals[type]);
+        startOtpExpiryTimer(type);
+
+        } else {
+        if (el) el.innerText = data.message || "Resend not allowed";
+      }
+    })
+    .catch(() => {
+      if (el) el.innerText = "Failed to resend OTP";
+    });
+} 
+
+  function confirmEmailOtp(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  clearOtpMessages();
+
+  const errEl = document.getElementById("verifyEmailOtpError");
+  const btn = document.getElementById("verifyEmailConfirmBtn");
+
+  // check complete
+  let complete = true;
+  for (let i = 0; i < 4; i++) {
+    const inp = document.getElementById("emailOtp" + i);
+    if (!inp || !inp.value.trim()) {
+      complete = false;
+      break;
+    }
+  }
+
+  if (!complete) {
+    if (errEl) errEl.innerText = "Please enter the complete 4-digit code.";
+    return;
+  }
+
+  const contact = localStorage.getItem("forgotContact");
+
+  if (!contact) {
+    if (errEl) errEl.innerText = "Session expired. Please try again.";
+    showPage("forgot");
+    return;
+  }
+
+  let code = "";
+  for (let j = 0; j < 4; j++) {
+    const inp = document.getElementById("emailOtp" + j);
+    if (inp) code += inp.value;
+  }
+
+  // loading state
+  if (btn) {
+    btn.disabled = true;
+    if (!btn.dataset.originalText) {
+      btn.dataset.originalText = btn.textContent;
+    }
+    btn.textContent = "Verifying...";
+  }
+
+  fetch(BACKEND_BASE_URL + "/api/auth/verify-otp-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: contact, otp: code })
+  })
+    .then(res => res.json().then(data => ({ res, data })))
+    .then(({ res, data }) => {
+
+      if (data.message === "MAX_ATTEMPTS_REACHED") {
+
+        // block email confirm button
+        blockConfirm("email");
+
+        const errEl = document.getElementById(
+          "verifyEmailOtpError"
+        );
+
+        if (errEl) {
+          errEl.innerText =
+            "Email OTP maximum attempts reached. Please resend OTP.";
+        }
+
+        // disable email OTP input boxes
+        for (let i = 0; i < 4; i++) {
+          const otpInput =
+            document.getElementById(`emailOtp${i}`);
+
+          if (otpInput) {
+            otpInput.disabled = true;
+          }
+        }
+
+        // clear email OTP boxes
+        clearOtpBoxes("email");
+
+        updateVerifyOtpButtons();
+      return;
+      }
+
+      if (res.ok) {
+        const tokenValue = data.token || data.resetToken;
+
+        if (tokenValue) {
+          localStorage.setItem("resetToken", tokenValue);
+        }
+
+        location.hash = "verified";
+        showPage("verified");
+
+      } else {
+        clearOtpBoxes("email");
+        if (otpBlocked.email) {
+          document.getElementById("verifyEmailOtpError").innerText =
+            "Maximum attempts reached. Please resend OTP.";
+          return;
+        }
+
+        if (errEl) {
+          errEl.innerText =
+            data?.attemptsLeft !== undefined
+              ? `${data.message} (Attempts left: ${data.attemptsLeft})`
+              : data?.message || "Invalid or expired code.";
+        }
+
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = btn.dataset.originalText || "Confirm";
+        }
+      }
+    })
+    .catch(() => {
+      if (errEl) errEl.innerText = "Connection error. Please try again.";
+
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.originalText || "Confirm";
+      }
+    });
+}
+
+  function confirmMobileOtp(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  clearOtpMessages();
+
+  const errEl = document.getElementById("verifyMobileOtpError");
+  const btn = document.getElementById("verifyMobileConfirmBtn");
+
+  let complete = true;
+  for (let i = 0; i < 4; i++) {
+    const inp = document.getElementById("mobileOtp" + i);
+    if (!inp || !inp.value.trim()) {
+      complete = false;
+      break;
+    }
+  }
+
+  if (!complete) {
+    if (errEl) errEl.innerText = "Please enter the complete 4-digit code.";
+    return;
+  }
+
+  const contact = localStorage.getItem("forgotContact");
+
+  if (!contact) {
+    if (errEl) errEl.innerText = "Session expired. Please try again.";
+    showPage("forgot");
+    return;
+  }
+
+  let code = "";
+  for (let j = 0; j < 4; j++) {
+    const inp = document.getElementById("mobileOtp" + j);
+    if (inp) code += inp.value;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    if (!btn.dataset.originalText) {
+      btn.dataset.originalText = btn.textContent;
+    }
+    btn.textContent = "Verifying...";
+  }
+
+  fetch(BACKEND_BASE_URL + "/api/auth/verify-otp-mobile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile: contact, otp: code })
+  })
+    .then(res => res.json().then(data => ({ res, data })))
+    .then(({ res, data }) => {
+
+      if (data.message === "MAX_ATTEMPTS_REACHED") {
+
+        // block mobile confirm button
+        blockConfirm("mobile");
+
+        const errEl = document.getElementById(
+          "verifyMobileOtpError"
+        );
+
+        if (errEl) {
+          errEl.innerText =
+            "Mobile OTP maximum attempts reached. Please resend OTP.";
+        }
+
+        // disable mobile OTP input boxes
+        for (let i = 0; i < 4; i++) {
+          const otpInput =
+            document.getElementById(`mobileOtp${i}`);
+
+          if (otpInput) {
+            otpInput.disabled = true;
+          }
+        }
+
+        // clear mobile OTP boxes
+        clearOtpBoxes("mobile");
+
+        updateVerifyOtpButtons();
+      return;
+      }
+      if (res.ok) {
+        const tokenValue = data.token || data.resetToken;
+
+        if (tokenValue) {
+          localStorage.setItem("resetToken", tokenValue);
+        }
+
+        location.hash = "verified";
+        showPage("verified");
+
+      } else {
+        clearOtpBoxes("mobile");
+        if (otpBlocked.mobile) {
+          document.getElementById("verifyMobileOtpError").innerText =
+            "Maximum attempts reached. Please resend OTP.";
+          return;
+        }
+
+        if (errEl) {
+          errEl.innerText =
+            data?.attemptsLeft !== undefined
+              ? `${data.message} (Attempts left: ${data.attemptsLeft})`
+              : data?.message || "Invalid or expired code.";
+        }
+
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = btn.dataset.originalText || "Confirm";
+        }
+      }
+    })
+    .catch(() => {
+      if (errEl) errEl.innerText = "Connection error. Please try again.";
+
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.originalText || "Confirm";
+      }
+    });
+}
+
+    function toggleNewPasswordVisibility() {
+      var input = document.getElementById("newPassword");
+      var btn = document.getElementById("newPasswordToggle");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        btn.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+    function toggleConfirmPasswordVisibility() {
+      var input = document.getElementById("confirmPassword");
+      var btn = document.getElementById("confirmPasswordToggle");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        btn.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+  async function handleUpdatePassword(event) {
+  event.preventDefault();
+
+  const newPwd = document.getElementById("newPassword").value;
+  const confirmPwd = document.getElementById("confirmPassword").value;
+  const errEl = document.getElementById("createPasswordError");
+
+  errEl.innerText = "";
+
+  const errors = [];
+
+  if (newPwd !== confirmPwd) {
+    errors.push("Passwords do not match");
+  }
+
+  if (newPwd.length < 8) {
+    errors.push("Minimum 8 characters required");
+  }
+
+  if (newPwd.length > 60) {
+    errors.push("Maximum 60 characters allowed");
+  }
+
+  if (/\s/.test(newPwd)) {
+    errors.push("Password cannot contain spaces");
+  }
+  
+  if (!/[A-Z]/.test(newPwd)) {
+    errors.push("At least one uppercase letter required");
+  }
+
+  if (!/[a-z]/.test(newPwd)) {
+    errors.push("At least one lowercase letter required");
+  }
+
+  if (!/[0-9]/.test(newPwd)) {
+    errors.push("At least one number required");
+  }
+
+  if (!/[!@#$%^&*(),.?\":{}|<>]/.test(newPwd)) {
+    errors.push("At least one special character required");
+  }
+
+  if (errors.length > 0) {
+    errEl.innerText = errors.join("\n");
+    return;
+  }
+  
+  try {
+    const token = localStorage.getItem("resetToken");
+
+    console.log("TOKEN:", token);
+
+    // ❌ token safety check
+    if (!token || token === "null" || token === "undefined") {
+      alert("Session expired. Please verify OTP again.");
+      location.hash = "verify";
+      showPage("verify");
+      return;
+    }
+
+    const BACKEND_BASE_URL = "http://18.119.210.2:5000";
+    const res = await fetch(BACKEND_BASE_URL + "/api/auth/reset-password", {
+
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + token
+  },
+  body: JSON.stringify({
+    newPassword: newPwd,
+    confirmPassword: confirmPwd
+  })
+});
+
+    const data = await res.json();
+
+
+    // ❌ ERROR HANDLING
+    if (!res.ok) {
+      if (res.status === 401) {
+        alert(data.message);
+        location.hash = "verify";
+        showPage("verify");
+        return;
+      }
+
+      errEl.innerText = data.errors ? data.errors.join(", ") : data.message;
+      return;
+    }
+
+    // ✅ SUCCESS BLOCK (CORRECT PLACE)
+    alert("Password reset successfully");
+
+    localStorage.removeItem("resetToken");
+
+    location.hash = "login";
+    showPage("login");
+
+  } catch (error) {
+    console.error(error);
+    errEl.innerText = "Server error";
+  }
+} 
+    
+   
+  </script>
+
+  <!-- ================= PLANNING PAGE ================= -->
+  <div id="planningPage" class="hidden min-h-[100dvh] w-full bg-[#efefef] overflow-x-hidden">
+    <nav class="planning-top-nav w-full bg-[#06224C]">
+      <div class="planning-top-nav-inner flex w-full flex-wrap items-center gap-2 px-3 py-3 sm:gap-3 sm:px-8 xl:flex-nowrap">
+        <div class="flex min-w-0 flex-shrink-0 items-center gap-2">
+          <button
+            type="button"
+            id="planningMobileMenuBtn"
+            onclick="togglePlanningMobileMenu(event)"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/25 text-white md:hidden planning-zoom-show-hamburger"
+            aria-label="Toggle navigation menu"
+            aria-expanded="false"
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M3 5.5H17M3 10H17M3 14.5H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </button>
+
+          <div class="flex h-8 min-w-[92px] items-center justify-center overflow-hidden rounded-[50%] bg-white px-3 sm:h-9 sm:min-w-[104px]">
+            <img src="./public/stackly-logo.webp" alt="Stackly logo" class="h-[18px] w-auto sm:h-[20px]" />
+          </div>
+      </div>
+
+        <div class="hidden min-w-0 flex-1 md:flex md:items-center planning-zoom-hide-primary-nav">
+          <nav class="flex w-full min-w-0 flex-wrap items-center justify-evenly gap-x-2 gap-y-2 text-[13px] text-white sm:text-sm sm:gap-x-3" aria-label="Main">
+            <button type="button" id="planningNav-workspace" class="planning-nav-btn shrink-0" onclick="planningNavClick('workspace')">Workspace</button>
+            <button type="button" id="planningNav-myWebsites" class="planning-nav-btn shrink-0" onclick="planningNavClick('myWebsites')">My Websites</button>
+            <button type="button" id="planningNav-templates" class="planning-nav-btn shrink-0" onclick="planningNavClick('templates')">Templates</button>
+            <button type="button" id="planningNav-domains" class="planning-nav-btn shrink-0" onclick="planningNavClick('domains')">Domains</button>
+            <button type="button" id="planningNav-billing" class="planning-nav-btn planning-nav-active shrink-0" aria-current="page" onclick="planningNavClick('billing')">Billing</button>
+          </nav>
+        </div>
+
+        <div id="planningMobileWrap" class="ml-auto flex min-w-0 flex-nowrap items-center gap-4 sm:gap-5 lg:gap-6">
+          <div class="flex shrink-0 items-center gap-3 md:hidden">
+            <button type="button" class="flex h-8 w-8 touch-manipulation items-center justify-center rounded-full border border-transparent bg-white p-0 m-0 cursor-pointer shadow-sm transition-all duration-150 ease-out hover:border-white/50 hover:bg-slate-100 hover:shadow-md hover:shadow-black/20 hover:ring-2 hover:ring-white/60 active:scale-[0.96] active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-label="Help">
+              <svg class="pointer-events-none h-[17px] w-[17px] shrink-0 text-[#06224C]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="geometricPrecision">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+                <path d="M9.75 9.5a2.25 2.25 0 1 1 3.9 1.55c-.55.57-1.15 1-1.65 1.6-.27.33-.42.7-.42 1.1v.25" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="16.8" r="1" fill="currentColor" />
+              </svg>
+            </button>
+            <button type="button" class="flex h-8 w-8 touch-manipulation items-center justify-center rounded-full border border-transparent bg-white p-0 m-0 cursor-pointer shadow-sm transition-all duration-150 ease-out hover:border-white/50 hover:bg-slate-100 hover:shadow-md hover:shadow-black/20 hover:ring-2 hover:ring-white/60 active:scale-[0.96] active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-label="Settings">
+              <svg class="pointer-events-none h-[17px] w-[17px] shrink-0 text-[#06224C]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="geometricPrecision">
+                <path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z" stroke="currentColor" stroke-width="2" />
+                <path d="M19 12a7.1 7.1 0 0 0-.07-.95l2.02-1.57-2-3.46-2.48.81a7.5 7.5 0 0 0-1.65-.96L14.4 3h-4.8l-.42 2.87c-.59.23-1.14.55-1.65.96l-2.48-.81-2 3.46 2.02 1.57a7.9 7.9 0 0 0 0 1.9L3.05 14.52l2 3.46 2.48-.81c.5.41 1.06.73 1.65.96L9.6 21h4.8l.42-2.87c.59-.23 1.14-.55 1.65-.96l2.48.81 2-3.46-2.02-1.57c.05-.31.07-.63.07-.95Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".9" />
+              </svg>
+            </button>
+            <button type="button" class="flex h-8 w-8 touch-manipulation items-center justify-center rounded-full border border-transparent bg-white p-0 m-0 cursor-pointer shadow-sm transition-all duration-150 ease-out hover:border-white/50 hover:bg-slate-100 hover:shadow-md hover:shadow-black/20 hover:ring-2 hover:ring-white/60 active:scale-[0.96] active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-label="Notifications">
+              <svg class="pointer-events-none h-[18px] w-[18px] shrink-0 text-[#06224C]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="geometricPrecision">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="hidden items-center gap-5 md:flex lg:gap-6">
+            <button type="button" class="flex h-6 w-6 items-center justify-center rounded-full border border-transparent bg-white p-0 m-0 cursor-pointer shadow-sm transition-all duration-150 ease-out hover:border-white/50 hover:bg-slate-100 hover:shadow-md hover:shadow-black/20 hover:ring-2 hover:ring-white/60 active:scale-[0.96] active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-label="Help">
+              <svg class="pointer-events-none h-4 w-4 shrink-0 text-[#06224C]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="geometricPrecision">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+                <path d="M9.75 9.5a2.25 2.25 0 1 1 3.9 1.55c-.55.57-1.15 1-1.65 1.6-.27.33-.42.7-.42 1.1v.25" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="16.8" r="1" fill="currentColor" />
+              </svg>
+            </button>
+            <button type="button" class="flex h-6 w-6 items-center justify-center rounded-full border border-transparent bg-white p-0 m-0 cursor-pointer shadow-sm transition-all duration-150 ease-out hover:border-white/50 hover:bg-slate-100 hover:shadow-md hover:shadow-black/20 hover:ring-2 hover:ring-white/60 active:scale-[0.96] active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-label="Settings">
+              <svg class="pointer-events-none h-4 w-4 shrink-0 text-[#06224C]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="geometricPrecision">
+                <path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z" stroke="currentColor" stroke-width="2" />
+                <path d="M19 12a7.1 7.1 0 0 0-.07-.95l2.02-1.57-2-3.46-2.48.81a7.5 7.5 0 0 0-1.65-.96L14.4 3h-4.8l-.42 2.87c-.59.23-1.14.55-1.65.96l-2.48-.81-2 3.46 2.02 1.57a7.9 7.9 0 0 0 0 1.9L3.05 14.52l2 3.46 2.48-.81c.5.41 1.06.73 1.65.96L9.6 21h4.8l.42-2.87c.59-.23 1.14-.55 1.65-.96l2.48.81 2-3.46-2.02-1.57c.05-.31.07-.63.07-.95Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".9" />
+              </svg>
+            </button>
+            <button type="button" class="flex h-6 w-6 items-center justify-center rounded-full border border-transparent bg-white p-0 m-0 cursor-pointer shadow-sm transition-all duration-150 ease-out hover:border-white/50 hover:bg-slate-100 hover:shadow-md hover:shadow-black/20 hover:ring-2 hover:ring-white/60 active:scale-[0.96] active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-label="Notifications">
+              <svg class="pointer-events-none h-4 w-4 shrink-0 text-[#06224C]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="geometricPrecision">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div id="planningProfileWrap" class="relative shrink-0">
+            <button type="button" id="planningProfileToggle" class="flex items-center gap-2 rounded-full py-0.5 pl-0.5 pr-1 transition-colors duration-150 ease-out hover:bg-white/15 active:bg-white/25 md:rounded-lg md:px-2 md:py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06224C]" aria-expanded="false" aria-haspopup="true" aria-label="Profile menu, Pentakota Srinivas" onclick="togglePlanningProfileMenu(event)">
+              <img src="./public/photo.webp" alt="" class="h-8 w-8 shrink-0 rounded-full object-cover md:h-7 md:w-7" />
+              <span id="planningDisplayUserName" class="hidden max-w-[140px] truncate text-left text-[11px] text-white md:inline md:max-w-[180px]">Pentakota Srinivas</span>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="hidden shrink-0 text-white/90 md:block">
+                <path d="M3.5 5L6 7.5L8.5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
+              </svg>
+            </button>
+            <div id="planningProfileMenu" class="absolute right-0 top-full z-50 mt-1 hidden min-w-[160px] rounded-md border border-gray-200 bg-white py-1 shadow-lg" role="menu">
+              <button type="button" class="block w-full px-3 py-2 text-left text-xs text-gray-800 hover:bg-gray-50" onclick="location.hash='login'; showPage('login'); document.getElementById('planningProfileMenu').classList.add('hidden');" role="menuitem">
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="planningMobileMenu" class="hidden border-t border-white/20 px-3 pb-3 pt-2 md:hidden planning-zoom-show-mobile-menu">
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="planningNavClick('workspace')" class="rounded-md border border-white/25 px-2 py-2 text-left text-xs text-white" id="planningMobile-workspace">Workspace</button>
+          <button type="button" onclick="planningNavClick('myWebsites')" class="rounded-md border border-white/25 px-2 py-2 text-left text-xs text-white" id="planningMobile-myWebsites">My Websites</button>
+          <button type="button" onclick="planningNavClick('templates')" class="rounded-md border border-white/25 px-2 py-2 text-left text-xs text-white" id="planningMobile-templates">Templates</button>
+          <button type="button" onclick="planningNavClick('domains')" class="rounded-md border border-white/25 px-2 py-2 text-left text-xs text-white" id="planningMobile-domains">Domains</button>
+          <button type="button" onclick="planningNavClick('billing')" class="rounded-md border border-[#f0e6d4] bg-white/10 px-2 py-2 text-left text-xs text-white" id="planningMobile-billing">Billing</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="w-full border border-[#dbe3ef] bg-white shadow-sm">
+      <section id="planningBillingContent" class="scroll-mt-4 px-3 py-5 sm:px-8 sm:py-8">
+        <div class="mb-4 w-full rounded-sm bg-gradient-to-r from-[#06224C] to-[#1A5BBC] px-4 py-2 text-center text-[11px] font-semibold text-white sm:text-xs">
+          Upgrade Now: Get - 50% Off on Selected Plans
+        </div>
+
+        <div id="planningPlansView" class="rounded bg-[#edf3fb] px-5 py-8 sm:px-8 sm:py-10 md:px-10">
+          <div class="mx-auto w-full max-w-5xl">
+          <h1 class="text-center text-3xl font-bold text-[#0b3268] sm:text-[44px] sm:leading-tight">Choose the Best Plan for You</h1>
+          <p class="mx-auto mt-4 max-w-2xl text-center text-[13px] font-medium leading-relaxed text-[#0f172a] sm:text-sm md:text-base">Create your website for free and upgrade when you're ready</p>
+
+          <div class="mt-5 flex justify-center sm:mt-6">
+            <button
+              type="button"
+              onclick="planningOpenPayment(0, true)"
+              class="inline-flex items-center gap-2 rounded-full border-0 bg-gradient-to-r from-[#06224C] to-[#1A5BBC] px-5 py-2.5 text-[11px] font-semibold text-white no-underline shadow-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#06224C]/45 hover:ring-2 hover:ring-white/55 active:translate-y-0 active:shadow-md sm:text-xs"
+            >
+              <span>Start Your Free Plan</span>
+              <span class="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="10" cy="10" r="8.25" stroke="white" stroke-width="1.2" fill="none" />
+                  <path d="M8 10h4M11.5 7l3 3-3 3" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                </svg>
+              </span>
+            </button>
+          </div>
+
+          <div class="mt-8 w-full pl-3 sm:pl-5 md:pl-8 lg:pl-10">
+            <div class="grid w-full min-w-0 grid-cols-1 gap-y-3 md:grid-cols-4 md:items-center md:gap-x-4 lg:gap-x-6">
+              <p class="min-w-0 text-center text-sm font-bold leading-snug text-[#0c1e36] md:text-left">What you get with every plan:</p>
+              <span class="min-w-0 text-center text-sm font-medium text-[#0f172a] md:text-center">Custom Domain</span>
+              <span class="min-w-0 text-center text-sm font-medium text-[#0f172a] md:text-center">Reliable web hosting</span>
+              <span class="min-w-0 text-center text-sm font-medium text-[#0f172a] md:text-center">24/7 customer care</span>
+            </div>
+          </div>
+
+          <div class="mt-8 flex w-full justify-center px-3 sm:px-4">
+            <div class="planning-billing-toggle-wrap flex w-full max-w-xl items-center gap-3 sm:gap-5">
+              <span
+                id="planningLabelMonthly"
+                class="planning-billing-label planning-billing-label--active inline-flex min-h-9 min-w-0 flex-1 select-none items-center justify-end py-1.5 pl-2 pr-1 text-right text-sm leading-tight sm:pr-2"
+              >
+                Bill Monthly
+              </span>
+              <button
+                type="button"
+                id="planningBillingSwitch"
+                role="switch"
+                aria-checked="false"
+                aria-label="Toggle monthly or yearly billing"
+                onclick="planningToggleBilling()"
+                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center self-center rounded-full border border-[#94a3b8] bg-white px-0.5 align-middle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#06224C]/40 focus-visible:ring-offset-2"
+              >
+                <span
+                  id="planningBillingKnob"
+                  class="pointer-events-none absolute left-0.5 top-1/2 h-4 w-4 -translate-y-1/2 translate-x-0 rounded-full bg-[#06224C] shadow-sm transition-transform duration-200"
+                ></span>
+              </button>
+              <span
+                id="planningLabelYearly"
+                class="planning-billing-label inline-flex min-h-9 min-w-0 flex-1 select-none items-center justify-start py-1.5 pl-1 pr-2 text-left text-sm leading-tight sm:pl-2"
+              >
+                Bill Yearly
+              </span>
+            </div>
+          </div>
+          </div>
+
+          <div class="planning-plans-grid mx-auto mt-8 grid w-full max-w-5xl grid-cols-1 gap-5 md:grid-cols-3 md:gap-6 md:items-stretch">
+            <article class="group relative flex h-full min-h-0 flex-col rounded border border-[#d8e1ec] bg-white p-4 text-[#0f172a] shadow-sm transition-all duration-200 hover:border-transparent hover:bg-gradient-to-b hover:from-[#06224C] hover:to-[#1A5BBC] hover:text-white hover:shadow-md sm:p-4">
+              <div class="mb-1.5 flex items-center justify-between gap-2">
+                <div>
+                  <h2 class="text-base font-bold leading-tight transition-colors group-hover:text-white">Basic</h2>
+                  <p id="planningPriceBasicPeriod" class="mt-0.5 text-xs leading-tight text-[#1e3a5c] transition-colors group-hover:text-white">Per month</p>
+                </div>
+              </div>
+              <div class="planning-price-row mb-1.5 flex items-start justify-between gap-2 lg:items-end">
+                <div class="planning-price-oldsave flex min-w-0 flex-wrap items-end gap-x-1.5 gap-y-0.5 pr-1">
+                  <div id="planningPriceBasicOld" class="text-sm font-bold text-[#0f172a] line-through transition-colors group-hover:text-white">$80</div>
+                  <div id="planningPriceBasicSave" class="text-[10px] font-semibold leading-tight text-[#2d4a6e] transition-colors group-hover:text-white">Save 50%</div>
+                </div>
+                <div id="planningPriceBasicNew" class="planning-price-chip relative top-0 mr-1 shrink-0 rounded border border-[#94b4e0] bg-[#e8f0fc] px-2 py-1 text-base font-bold leading-none text-[#082a5c] transition-colors lg:-top-2 lg:mr-3 lg:px-3.5 lg:py-1.5 lg:text-xl group-hover:border-white/30 group-hover:bg-white group-hover:text-[#0f3e87]">$40</div>
+              </div>
+              <div class="mb-2 h-px w-full bg-[#dbe3ef] transition-colors group-hover:bg-white/30"></div>
+              <ul class="space-y-1 text-xs leading-snug text-[#0f172a] transition-colors group-hover:text-white sm:text-sm sm:leading-snug">
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Free domain for 1 year</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>20 GB storage space</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Multi-cloud hosting</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Light marketing suite</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>2 site collaborators</span></li>
+              </ul>
+              <div class="mt-2 min-h-0 w-full flex-1 shrink-0" aria-hidden="true"></div>
+              <button type="button" onclick="planningOpenPayment(0)" class="block w-full shrink-0 rounded-full bg-gradient-to-r from-[#06224C] to-[#1A5BBC] py-2 text-center text-sm font-semibold text-white shadow-sm transition-colors transition-opacity duration-200 group-hover:bg-none group-hover:bg-white group-hover:text-[#154fa2] group-hover:opacity-100 hover:bg-none hover:bg-white hover:text-[#154fa2]">
+                Purchase Plan
+              </button>
+            </article>
+
+            <article class="group planning-recommended-card relative flex h-full min-h-0 flex-col rounded border border-[#d8e1ec] bg-white p-4 text-[#0f172a] shadow-sm transition-all duration-200 hover:border-transparent hover:bg-gradient-to-b hover:from-[#06224C] hover:to-[#1A5BBC] hover:text-white hover:shadow-md sm:p-4">
+              <div class="planning-recommended-badge absolute right-0 top-0 z-10 rounded-bl-md border border-white/10 bg-[#1A5BBC] px-3 py-1.5 text-[9px] font-extrabold leading-none tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.12)] transition-colors group-hover:bg-white group-hover:text-[#06224C] group-hover:border-[#06224C]/40 hover:bg-white hover:text-[#06224C] hover:border-[#06224C]/40">
+                RECOMMENDED
+              </div>
+              <div class="mb-1.5 planning-recommended-content-offset flex items-center justify-between gap-2">
+                <div>
+                  <h2 class="text-base font-bold leading-tight transition-colors group-hover:text-white">Business Plan</h2>
+                  <p id="planningPriceBusinessPeriod" class="mt-0.5 text-xs leading-tight text-[#1e3a5c] transition-colors group-hover:text-white">Per month</p>
+                </div>
+              </div>
+              <div class="planning-price-row mb-1.5 flex items-start justify-between gap-2 lg:items-end">
+                <div class="planning-price-oldsave flex min-w-0 flex-wrap items-end gap-x-1.5 gap-y-0.5 pr-1">
+                  <div id="planningPriceBusinessOld" class="text-sm font-bold text-[#0f172a] line-through transition-colors group-hover:text-white">$300</div>
+                  <div id="planningPriceBusinessSave" class="text-[10px] font-semibold leading-tight text-[#2d4a6e] transition-colors group-hover:text-white">Save 50%</div>
+                </div>
+                <div id="planningPriceBusinessNew" class="planning-price-chip relative top-0 mr-1 shrink-0 rounded border border-[#94b4e0] bg-[#e8f0fc] px-2 py-1 text-base font-bold leading-none text-[#082a5c] transition-colors lg:-top-2 lg:mr-3 lg:px-3.5 lg:py-1.5 lg:text-xl group-hover:border-white/30 group-hover:bg-white group-hover:text-[#0f3e87]">$150</div>
+              </div>
+              <div class="mb-2 h-px w-full bg-[#dbe3ef] transition-colors group-hover:bg-white/30"></div>
+              <ul class="space-y-1 text-xs leading-snug text-[#0f172a] transition-colors group-hover:text-white sm:text-sm sm:leading-snug">
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Free domain for 1 year</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>100 GB storage space</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Multi-cloud hosting</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Standard marketing suite</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Accept payments</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Basic eCommerce</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Scheduling and services</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>10 site collaborators</span></li>
+              </ul>
+              <div class="mt-2 min-h-0 w-full flex-1 shrink-0" aria-hidden="true"></div>
+              <button type="button" onclick="planningOpenPayment(1)" class="block w-full shrink-0 rounded-full bg-gradient-to-r from-[#06224C] to-[#1A5BBC] py-2 text-center text-sm font-semibold text-white shadow-sm transition-colors transition-opacity duration-200 group-hover:bg-none group-hover:bg-white group-hover:text-[#154fa2] group-hover:opacity-100 hover:bg-none hover:bg-white hover:text-[#154fa2]">
+                Purchase Plan
+              </button>
+            </article>
+
+            <article class="group relative flex h-full min-h-0 flex-col rounded border border-[#d8e1ec] bg-white p-4 text-[#0f172a] shadow-sm transition-all duration-200 hover:border-transparent hover:bg-gradient-to-b hover:from-[#06224C] hover:to-[#1A5BBC] hover:text-white hover:shadow-md sm:p-4">
+              <div class="mb-1.5 flex items-center justify-between gap-2">
+                <div>
+                  <h2 class="text-base font-bold leading-tight transition-colors group-hover:text-white">Advanced</h2>
+                  <p id="planningPriceAdvancedPeriod" class="mt-0.5 text-xs leading-tight text-[#1e3a5c] transition-colors group-hover:text-white">Per month</p>
+                </div>
+              </div>
+              <div class="planning-price-row mb-1.5 flex items-start justify-between gap-2 lg:items-end">
+                <div class="planning-price-oldsave flex min-w-0 flex-wrap items-end gap-x-1.5 gap-y-0.5 pr-1">
+                  <div id="planningPriceAdvancedOld" class="text-sm font-bold text-[#0f172a] line-through transition-colors group-hover:text-white">$400</div>
+                  <div id="planningPriceAdvancedSave" class="text-[10px] font-semibold leading-tight text-[#2d4a6e] transition-colors group-hover:text-white">Save 30%</div>
+                </div>
+                <div id="planningPriceAdvancedNew" class="planning-price-chip relative top-0 mr-1 shrink-0 rounded border border-[#94b4e0] bg-[#e8f0fc] px-2 py-1 text-base font-bold leading-none text-[#082a5c] transition-colors lg:-top-2 lg:mr-3 lg:px-3.5 lg:py-1.5 lg:text-xl group-hover:border-white/30 group-hover:bg-white group-hover:text-[#0f3e87]">$280</div>
+              </div>
+              <div class="mb-2 h-px w-full bg-[#dbe3ef] transition-colors group-hover:bg-white/30"></div>
+              <ul class="space-y-1 text-xs leading-snug text-[#0f172a] transition-colors group-hover:text-white sm:text-sm sm:leading-snug">
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Free domain for 1 year</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>300 GB storage space</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Multi-cloud hosting</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Legacy marketing suite</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Accept payments</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Basic eCommerce</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>Scheduling and services</span></li>
+                <li class="flex items-start gap-1.5"><span class="mt-px text-[10px] text-[#0b3268] transition-colors group-hover:text-white" aria-hidden="true">✓</span><span>5 site collaborators</span></li>
+              </ul>
+              <div class="mt-2 min-h-0 w-full flex-1 shrink-0" aria-hidden="true"></div>
+              <button type="button" onclick="planningOpenPayment(2)" class="block w-full shrink-0 rounded-full bg-gradient-to-r from-[#06224C] to-[#1A5BBC] py-2 text-center text-sm font-semibold text-white shadow-sm transition-colors transition-opacity duration-200 group-hover:bg-none group-hover:bg-white group-hover:text-[#154fa2] group-hover:opacity-100 hover:bg-none hover:bg-white hover:text-[#154fa2]">
+                Purchase Plan
+              </button>
+            </article>
+          </div>
+        </div>
+
+        <div id="planningPaymentView" class="hidden mx-auto w-full text-white" style="max-width:740px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg,#2b66be 0%,#0a2a5f 100%);box-shadow:0 2px 0 rgba(0,0,0,0.2);">
+          <div class="border-b border-white/20 px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6">
+            <div class="mb-4 text-left">
+              <button type="button" onclick="planningBackToPlans()" class="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:text-sm" aria-label="Back to plans">← Back to plans</button>
+            </div>
+            <div class="text-center">
+              <h2 class="text-2xl font-bold sm:text-3xl">Secure Payment</h2>
+              <p id="planningPaymentSubtitle" class="mt-2 text-xs text-white/85 sm:text-sm">Enter your card details to upgrade.</p>
+            </div>
+          </div>
+          <div class="mx-auto w-full px-4 py-6 sm:px-6 sm:py-8" style="max-width:430px;">
+            <div class="space-y-3 text-xs sm:space-y-4 sm:text-sm">
+              <label class="flex cursor-pointer items-center gap-2">
+                <input type="radio" name="planningPm" value="paypal" class="accent-white" onchange="planningSyncPaymentMethodUI()" />
+                Paypal
+              </label>
+              <label class="flex cursor-pointer items-center gap-2">
+                <input type="radio" name="planningPm" value="card" class="accent-white" checked onchange="planningSyncPaymentMethodUI()" />
+                Credit / Debit Card
+              </label>
+              <label class="flex cursor-pointer items-center gap-2">
+                <input type="radio" name="planningPm" value="netbanking" class="accent-white" onchange="planningSyncPaymentMethodUI()" />
+                Net Banking
+              </label>
+              <label class="flex cursor-pointer items-center gap-2">
+                <input type="radio" name="planningPm" value="online" class="accent-white" onchange="planningSyncPaymentMethodUI()" />
+                Online Payment ( g-pay / Phone pay )
+              </label>
+            </div>
+            <div class="mt-5 border-t border-white/15 pt-5 text-xs sm:text-sm">
+              <div id="planningPaymentPanelPaypal" class="hidden space-y-3">
+                <p class="text-white/80">You will be redirected to PayPal to log in and approve this payment.</p>
+                <input id="planningPaypalEmail" type="email" inputmode="email" autocomplete="email" placeholder="PayPal email" class="block w-full rounded border border-white/40 bg-transparent px-3 py-2 text-xs text-white placeholder:text-white/70 focus:outline-none sm:text-sm" style="width:100%;" />
+              </div>
+              <div id="planningPaymentPanelCard">
+                <input id="planningCardNumber" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="cc-number" placeholder="Card Number" class="mb-4 block w-full rounded border border-white/40 bg-transparent px-3 py-2 text-xs text-white placeholder:text-white/70 focus:outline-none sm:text-sm" style="width:100%;" oninput="planningCardNumberInput(this)" />
+                <div class="grid grid-cols-2 gap-2" style="width:100%;">
+                  <input id="planningCardExpiry" type="text" inputmode="numeric" pattern="[0-9/]*" autocomplete="cc-exp" placeholder="MM/YY" class="rounded border border-white/40 bg-transparent px-3 py-2 text-xs text-white placeholder:text-white/70 focus:outline-none sm:text-sm" oninput="planningCardExpiryInput(this)" />
+                  <input id="planningCardCvv" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="cc-csc" placeholder="Cvv" class="rounded border border-white/40 bg-transparent px-3 py-2 text-xs text-white placeholder:text-white/70 focus:outline-none sm:text-sm" oninput="planningCardCvvInput(this)" />
+                </div>
+              </div>
+              <div id="planningPaymentPanelNetbanking" class="hidden space-y-3">
+                <label class="block text-white/90">Select your bank</label>
+                <select id="planningNetBank" class="w-full rounded border border-white/40 bg-[#0a2a5f]/80 px-3 py-2 text-xs text-white focus:outline-none sm:text-sm">
+                  <option value="">Choose bank…</option>
+                  <option value="hdfc">HDFC Bank</option>
+                  <option value="icici">ICICI Bank</option>
+                  <option value="sbi">State Bank of India</option>
+                  <option value="axis">Axis Bank</option>
+                  <option value="kotak">Kotak Mahindra Bank</option>
+                  <option value="other">Other bank</option>
+                </select>
+                <p class="text-[11px] leading-snug text-white/75">You will be taken to your bank&apos;s website to authorize payment, then returned here.</p>
+              </div>
+              <div id="planningPaymentPanelOnline" class="hidden space-y-4">
+                <div class="flex flex-wrap gap-3">
+                  <label class="flex cursor-pointer items-center gap-2">
+                    <input type="radio" name="planningOnlineWallet" value="gpay" class="accent-white" checked onchange="planningSyncOnlinePaymentHint()" />
+                    Google Pay
+                  </label>
+                  <label class="flex cursor-pointer items-center gap-2">
+                    <input type="radio" name="planningOnlineWallet" value="phonepe" class="accent-white" onchange="planningSyncOnlinePaymentHint()" />
+                    PhonePe
+                  </label>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-white/90">UPI ID</label>
+                  <input id="planningUpiId" type="text" autocomplete="off" placeholder="name@bank / name@upi" class="block w-full rounded border border-white/40 bg-transparent px-3 py-2 text-xs text-white placeholder:text-white/70 focus:outline-none sm:text-sm" style="width:100%;" />
+                  <p id="planningOnlinePaymentHint" class="mt-2 text-[11px] leading-snug text-white/75">Open Google Pay and approve the request, or pay with your UPI ID above.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-white/20 px-4 py-5 text-center sm:px-6 sm:py-6">
+            <button id="planningCompletePaymentBtn" type="button" onclick="planningCompletePayment()" class="inline-flex min-w-[160px] items-center justify-center rounded bg-white px-5 py-2 text-xs font-semibold text-[#1f2937] sm:min-w-[180px] sm:px-6 sm:text-sm">
+              Complete Payment
+            </button>
+          </div>
+        </div>
+
+        <div id="planningInvoiceView" class="hidden mx-auto w-full text-white" style="max-width:740px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg,#2a66be 0%,#0b2a5c 100%);box-shadow:0 2px 0 rgba(0,0,0,0.25);">
+          <div class="border-b border-white/15 px-4 py-5 sm:px-8 sm:py-6">
+            <div class="mb-4 text-left">
+              <button type="button" onclick="planningBackToPlans()" class="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:text-sm" aria-label="Back to plans">← Back to plans</button>
+            </div>
+            <div class="text-center">
+              <h2 class="text-[36px] font-bold leading-tight">Invoice Details</h2>
+            </div>
+          </div>
+          <div class="space-y-8 px-8 py-7">
+            <div class="mx-auto w-full max-w-2xl space-y-4 text-[15px]">
+              <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Invoice ID</span><span>:</span><span id="planningInvoiceId" class="planning-invoice-value">INV-000000</span></div>
+              <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Date</span><span>:</span><span id="planningInvoiceDate" class="planning-invoice-value">Apr 08, 2026</span></div>
+              <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Plan</span><span>:</span><span id="planningInvoicePlan" class="planning-invoice-value">Basic (Monthly)</span></div>
+              <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Amount</span><span>:</span><span id="planningInvoiceAmount" class="planning-invoice-value">$40</span></div>
+            </div>
+            <div class="border-t border-white/15 pt-6">
+              <h3 class="mx-auto mb-5 w-full max-w-2xl text-[30px] font-semibold">Billing Information</h3>
+              <div class="mx-auto w-full max-w-2xl space-y-4 text-[15px]">
+                <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Name</span><span>:</span><span id="planningInvoiceName" class="planning-invoice-value">Pentakota Srinivas</span></div>
+                <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Email</span><span>:</span><span id="planningInvoiceEmail" class="planning-invoice-value">srinu@gmail.com</span></div>
+                <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Contact No</span><span>:</span><span id="planningInvoiceContact" class="planning-invoice-value">9848xxxx19</span></div>
+                <div class="planning-invoice-row" style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);align-items:center;"><span>Address</span><span>:</span><span id="planningInvoiceAddress" class="planning-invoice-value">Chennai - 636008</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-white/15 px-8 py-6 text-center">
+            <button type="button" onclick="planningSetView('history')" class="inline-flex items-center gap-2 rounded-md bg-white px-6 py-2.5 text-[15px] font-semibold text-[#1f2937]"><span aria-hidden>↓</span>Download Invoice</button>
+          </div>
+        </div>
+
+        <div id="planningHistoryView" class="hidden mx-auto my-6 w-full p-4 text-white" style="max-width:560px;border-radius:8px;background:linear-gradient(180deg,#2f6dca 0%,#0a2a5f 100%);box-shadow:0 2px 0 rgba(0,0,0,0.28);border:2px solid #8aa0c1;">
+          <div class="mx-auto mb-3 w-full max-w-[470px] text-left">
+            <button type="button" onclick="planningBackToPlans()" class="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:text-sm" aria-label="Back to plans">← Back to plans</button>
+          </div>
+          <div class="planning-history-track mx-auto mb-4 flex w-full max-w-[470px] items-center justify-between pb-4" style="border-bottom:1px solid rgba(255,255,255,0.17);">
+            <h2 class="text-[34px] font-bold leading-tight tracking-[0.2px]">Billing History</h2>
+            <div class="flex items-center overflow-hidden rounded-md bg-white" style="color:#1f2937;font-size:10px;line-height:1.2;box-shadow:0 0 0 1px rgba(15,23,42,0.08);">
+              <button id="planningHistoryAllBtn" type="button" onclick="planningSetHistoryFilterYear('all')" style="border-right:1px solid #e2e8f0;padding:7px 10px;color:#1f2937;">All Invoices</button>
+              <select id="planningHistoryYearSelect" onchange="planningSetHistoryFilterYear(this.value)" style="padding:7px 10px;color:#1f2937;border:0;outline:none;background:transparent;font-weight:700;">
+                <option value="this">This Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="planning-history-table-wrap mx-auto w-full max-w-[470px] overflow-x-auto rounded-md bg-white" style="box-shadow:inset 0 0 0 1px rgba(15,23,42,0.08);">
+            <table class="w-full min-w-[470px] text-left" style="font-size:10.5px;color:#0f172a;">
+              <thead class="bg-[#f3f4f6] text-[11px] font-semibold text-[#1f2937]" style="border-bottom:2px solid #d1d5db;">
+                <tr>
+                  <th class="px-3 py-3.5">Date</th>
+                  <th class="px-3 py-3.5">Invoice ID</th>
+                  <th class="px-3 py-3.5">Amount</th>
+                  <th class="px-3 py-3.5">Status</th>
+                  <th class="px-3 py-3.5">Download</th>
+                </tr>
+              </thead>
+              <tbody id="planningHistoryTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= SIGNUP PAGE ================= -->
+  <div id="signupPage" class="hidden auth-page min-h-[100dvh] lg:min-h-screen bg-white flex flex-col px-3 sm:px-6 py-0 lg:py-4 overflow-y-auto">
+    <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 sm:gap-6 lg:gap-8 auth-layout">
+      <!-- CARD FIRST ON MOBILE (TOP), RIGHT ON DESKTOP -->
+      <div class="w-full lg:w-1/2 flex justify-center order-1 lg:order-2">
+        <div class="relative overflow-hidden w-full max-w-[520px] bg-gradient-to-b from-[#5f82e8] via-[#3f66c9] to-[#021a46] rounded-none lg:rounded-[10px] px-6 sm:px-10 flex flex-col auth-form-card">
+          <div
+            class="
+              auth-inner-panel
+              pointer-events-none
+              absolute
+              inset-y-0
+              left-1/2
+              w-[78%]
+              -translate-x-1/2
+              bg-gradient-to-b
+              from-white/10
+              via-black/10
+              to-black/35
+            "
+          ></div>
+          <div
+            class="
+              pointer-events-none
+              absolute
+              inset-0
+              rounded-none lg:rounded-[10px]
+              shadow-[inset_20px_0_45px_rgba(0,0,0,0.55),inset_-20px_0_45px_rgba(0,0,0,0.55)]
+            "
+          ></div>
+          <div
+            class="
+              pointer-events-none
+              absolute
+              inset-0
+              rounded-none lg:rounded-[10px]
+              shadow-[inset_0_0_0_1px_rgba(0,0,0,0.25)]
+            "
+          ></div>
+
+            <div class="relative z-10 flex flex-col flex-1 min-h-0 min-w-0 px-4 sm:px-6 pt-2 sm:pt-4 pb-1.5 sm:pb-3 lg:pt-7 lg:pb-4 text-white signup-card-content text-left justify-start lg:justify-between">
+            <!-- WELCOME + logo: same stack so both center on one axis -->
+            <div class="signup-brand-stack flex w-full min-w-0 flex-col items-center flex-shrink-0 mb-3 sm:mb-2.5 lg:mb-4">
+              <h1 class="signup-welcome-title font-welcome-heading text-lg sm:text-xl md:text-2xl lg:text-3xl text-center font-semibold mb-1 sm:mb-4 lg:mb-7 break-words tracking-widest">
+              WELCOME
+            </h1>
+              <div class="bg-white w-[120px] sm:w-[140px] lg:w-[180px] h-[44px] sm:h-[52px] lg:h-[64px] rounded-[50%] flex items-center justify-center shadow-lg overflow-hidden shrink-0">
+                <img src="public/stackly-logo.webp" alt="Stackly Logo" class="h-3.5 sm:h-4 lg:h-7 object-contain" />
+              </div>
+            </div>
+
+            <!-- INPUTS -->
+            <div class="space-y-3 sm:space-y-2 lg:space-y-2.5 flex-shrink-0">
+              <div>
+                <div class="flex items-center border-b border-white/80 pb-2">
+                  <i class="fa-solid fa-user mr-3 text-sm text-white/90"></i>
+                  <input
+                    id="signupName"
+                    type="text"
+                    placeholder="Name"
+                    class="bg-transparent outline-none w-full placeholder-white/90 text-sm text-white"
+                  />
+                </div>
+                <p id="signupNameError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+
+              <div>
+                <div class="flex items-center border-b border-white/80 pb-2">
+                  <i class="fa-solid fa-envelope mr-3 text-sm text-white/90"></i>
+                  <input
+                    id="signupEmail"
+                    type="email"
+                    placeholder="Email"
+                    class="bg-transparent outline-none w-full placeholder-white/90 text-sm text-white"
+                  />
+                </div>
+                <p id="signupEmailError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+
+              <div>
+                <div class="flex items-center border-b border-white/80 pb-2">
+                  <i class="fa-solid fa-phone mr-3 text-sm text-white/90"></i>
+                  <input
+                    id="signupMobile"
+                    type="tel"
+                    inputmode="numeric"
+                    maxlength="10"
+                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);"
+                    placeholder="Mobile number"
+                    class="bg-transparent outline-none w-full placeholder-white/90 text-sm text-white min-w-0"
+                  />
+                </div>
+                <p id="signupMobileError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+
+              <div>
+                <div id="signupPasswordWrap" class="flex items-center border-b border-white/80 pb-2 password-toggle-hidden relative">
+                  <i class="fa-solid fa-lock signup-confirm-icon mr-3 text-sm text-white/90 flex-shrink-0"></i>
+                  <input
+                    id="signupPassword"
+                    type="password"
+                    placeholder="Password"
+                    class="bg-transparent outline-none w-full placeholder-white/90 text-sm text-white pr-9 signup-confirm-input"
+                    oninput="updateSignupPasswordToggleVisibility()"
+                  />
+                  <button type="button" aria-label="Toggle password visibility" class="password-toggle-btn absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-1 flex-shrink-0" onclick="toggleSignupPasswordVisibility()">
+                    <i id="signupPasswordToggle" class="fa-solid fa-eye text-sm"></i>
+                  </button>
+                </div>
+                <p id="signupPasswordError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+
+              <div>
+                <div id="signupConfirmPasswordWrap" class="flex items-center border-b border-white/80 pb-2 password-toggle-hidden relative">
+                  <i class="fa-solid fa-lock mr-3 text-sm text-white/90 flex-shrink-0"></i>
+                  <input
+                    id="signupConfirmPassword"
+                    type="password"
+                    placeholder="Confirm Password"
+                    class="bg-transparent outline-none w-full placeholder-white/90 text-sm text-white pr-9 signup-confirm-input"
+                    oninput="updateSignupConfirmPasswordToggleVisibility()"
+                  />
+                  <button type="button" aria-label="Toggle confirm password visibility" class="password-toggle-btn absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-1 flex-shrink-0" onclick="toggleSignupConfirmPasswordVisibility()">
+                    <i id="signupConfirmPasswordToggle" class="fa-solid fa-eye text-sm"></i>
+                  </button>
+                </div>
+                <p id="signupConfirmPasswordError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+            </div>
+
+            <!-- SIGNUP BUTTON -->
+            <button
+              onclick="handleSignup()"
+              class="mt-2.5 mb-2.5 lg:mt-2.5 lg:mb-2.5 w-full h-[42px] flex-shrink-0 bg-gradient-to-r from-[#2d8cf0] to-[#5a78c7] rounded-md text-sm font-medium text-white shadow-md hover:opacity-90 transition"
+            >
+              Sign Up
+            </button>
+            <p id="signupFormError" class="error-text mt-1 text-center text-[11px] sm:text-xs"></p>
+
+            <!-- LOGIN LINK -->
+            <div class="flex-shrink-0 mt-1 lg:mt-0.5">
+            <p class="text-center text-xs mt-1 lg:mt-0.5 mb-1.5 lg:mb-2 text-white/80">
+              Already have an account?
+              <button
+                type="button"
+                onclick="location.hash='login'; showPage('login')"
+                class="text-amber-300 hover:text-amber-200 cursor-pointer underline-offset-2 font-medium ml-0.5"
+              >
+                Login
+              </button>
+            </p>
+
+            <!-- DIVIDER -->
+            <div class="mt-1.5 mb-1 lg:mt-1 lg:mb-0.5 border-t border-white/50"></div>
+
+            <!-- GOOGLE BUTTON - fully visible (WB_006) -->
+            <div class="pt-0 pb-1 sm:pt-1 sm:pb-3 lg:pb-2">
+            <button
+              type="button"
+              onclick="window.location.href='https://accounts.google.com/o/oauth2/v2/auth?client_id=703831654489-m34p97it8cppn924006cgt8u6jgk9tsa.apps.googleusercontent.com&redirect_uri=http://52.14.128.127:5000/api/auth/google&response_type=code&scope=openid%20email%20profile&access_type=online&prompt=select_account'"
+              class="
+                w-full
+                h-[42px]
+                border border-white/80
+                rounded-md
+                flex items-center justify-center
+                text-sm
+                font-medium
+                bg-transparent
+                text-white
+                hover:bg-white
+                hover:text-[#0c2b5a]
+                transition
+              "
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google logo"
+                class="mr-3 w-5 h-5"
+              />
+              Sign up with Google
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      <!-- IMAGE BELOW ON MOBILE, LEFT ON DESKTOP -->
+            <div class="auth-image-col w-full lg:w-1/2 flex justify-center order-2 lg:order-1 mt-6 sm:mt-8 lg:mt-0 auth-image-wrap">
+        <img
+          src="public/illustration.webp"
+          alt="Illustration"
+                class="auth-image w-[80%] sm:w-[80%] lg:w-[88%] max-w-[520px] object-contain"
+        />
+      </div>
+    </div>
+      </div>
+
+  <!-- ================= LOGIN PAGE ================= -->
+  <div id="loginPage" class="auth-page min-h-[100dvh] lg:min-h-screen bg-white flex flex-col px-3 sm:px-6 py-0 lg:py-4 overflow-y-auto">
+    <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 sm:gap-6 lg:gap-8 auth-layout">
+      <!-- CARD FIRST ON MOBILE (TOP), RIGHT ON DESKTOP -->
+      <div class="w-full lg:w-1/2 flex justify-center order-1 lg:order-2">
+        <div class="relative overflow-hidden w-full max-w-[520px] bg-gradient-to-b from-[#5f82e8] via-[#3f66c9] to-[#021a46] rounded-none lg:rounded-[10px] px-6 sm:px-10 flex flex-col login-card auth-form-card">
+        <div
+          class="
+              auth-inner-panel
+              pointer-events-none
+              absolute
+              inset-y-0
+              left-1/2
+              w-[78%]
+              -translate-x-1/2
+              bg-gradient-to-b
+              from-white/10
+              via-black/10
+              to-black/35
+            "
+          ></div>
+          <div
+            class="
+              pointer-events-none
+              absolute
+              inset-0
+              rounded-none lg:rounded-[10px]
+              shadow-[inset_20px_0_45px_rgba(0,0,0,0.55),inset_-20px_0_45px_rgba(0,0,0,0.55)]
+            "
+          ></div>
+          <div
+            class="
+              pointer-events-none
+              absolute
+              inset-0
+              rounded-none lg:rounded-[10px]
+              shadow-[inset_0_0_0_1px_rgba(0,0,0,0.25)]
+            "
+          ></div>
+
+          <div class="relative z-10 flex flex-col flex-1 min-h-0 min-w-0 auth-card-content login-card-inner px-4 sm:px-6 pt-4 sm:pt-8 pb-2 sm:pb-6 lg:pt-14 lg:pb-10 text-white text-left justify-start lg:justify-center">
+            <!-- WELCOME (WB_005: centered on narrow screens) -->
+            <div class="w-full flex justify-center flex-shrink-0 min-w-0">
+            <h1 class="font-welcome-heading text-lg sm:text-xl md:text-2xl lg:text-3xl text-center font-semibold mb-1 sm:mb-4 lg:mb-7 break-words tracking-widest">
+              WELCOME
+            </h1>
+            </div>
+
+            <div class="flex justify-center mb-8 sm:mb-4 lg:mb-8 flex-shrink-0">
+              <div class="bg-white w-[120px] h-[44px] sm:w-[160px] sm:h-[60px] lg:w-[200px] lg:h-[80px] rounded-[50%] flex items-center justify-center shadow-lg overflow-hidden">
+                <img
+                  src="public/stackly-logo.webp"
+                  alt="Stackly Logo"
+                  class="h-4 sm:h-5 lg:h-8 object-contain"
+                />
+              </div>
+            </div>
+
+            <div class="min-h-0">
+            <!-- INPUTS -->
+            <div class="space-y-6 sm:space-y-4 lg:space-y-6 flex-shrink-0">
+              <div>
+                <div class="flex items-center border-b border-white/60 pb-2 min-w-0">
+                  <i class="fa-solid fa-address-book login-email-icon mr-2 sm:mr-4 text-sm opacity-80 flex-shrink-0"></i>
+                  <input
+                    id="loginEmail"
+                    type="text"
+                    placeholder="Email or Mobile number"
+                    class="bg-transparent outline-none w-full min-w-0 placeholder-white text-sm tracking-tight login-email-input"
+                  />
+                </div>
+                <p id="loginEmailError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+
+              <div>
+                <div id="loginPasswordWrap" class="flex items-center border-b border-white/60 pb-2 password-toggle-hidden relative min-w-0">
+                  <i class="fa-solid fa-lock mr-2 sm:mr-4 text-sm opacity-80 flex-shrink-0"></i>
+                  <input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Password"
+                    class="bg-transparent outline-none w-full min-w-0 placeholder-white text-sm pr-9"
+                    oninput="updateLoginPasswordToggleVisibility()"
+                  />
+                  <button type="button" aria-label="Toggle password visibility" class="password-toggle-btn absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-1 flex-shrink-0" onclick="toggleLoginPasswordVisibility()">
+                    <i id="loginPasswordToggle" class="fa-solid fa-eye text-sm"></i>
+                  </button>
+                </div>
+                <p id="loginPasswordError" class="error-text mt-0.5 text-[11px] sm:text-xs"></p>
+              </div>
+            </div>
+
+            <!-- REMEMBER / FORGOT -->
+            <div class="login-remember-forgot flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mt-5 sm:mt-4 text-xs opacity-90 min-w-0">
+              <label class="flex items-center gap-2 cursor-pointer flex-shrink-0">
+                <input
+                  type="checkbox"
+                  class="h-3.5 w-3.5 rounded border border-white/60 bg-transparent accent-[#2d8cf0]"
+                />
+                <span>Remember me</span>
+              </label>
+              <a href="#forgot" onclick="location.hash='forgot'; showPage('forgot'); return false;" class="forgot-password-link cursor-pointer flex-shrink-0 min-w-0">
+                Forgot Password?
+              </a>
+            </div>
+
+            <!-- LOGIN BUTTON -->
+            <button
+              onclick="handleLogin()"
+              class="mt-6 sm:mt-6 lg:mt-8 w-full h-[42px] sm:h-[45px] bg-gradient-to-r from-[#2d8cf0] to-[#5a78c7] rounded-md text-sm font-medium shadow-md hover:opacity-90 transition"
+            >
+              Login
+            </button>
+            <p id="loginFormError" class="error-text mt-1.5 sm:mt-2 text-center text-[11px] sm:text-xs"></p>
+            </div>
+
+            <!-- SIGNUP LINK -->
+            <p class="text-center text-xs mt-4 sm:mt-2 text-white/80 flex-shrink-0">
+              Don't have an account?
+              <button
+                type="button"
+                onclick="location.hash='signup'; showPage('signup')"
+                class="text-yellow-400 hover:text-yellow-300 font-medium cursor-pointer"
+              >
+                Sign Up
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAGE BELOW ON MOBILE, LEFT ON DESKTOP -->
+      <div class="auth-image-col w-full lg:w-1/2 flex justify-center order-2 lg:order-1 mt-6 sm:mt-8 lg:mt-0">
+        <img
+          src="public/login.webp"
+          alt="Secure login illustration"
+          class="auth-image w-[80%] sm:w-[70%] lg:w-[90%] max-w-[550px] object-contain"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FORGOT PASSWORD PAGE (layout matches app/forgot-password) ================= -->
+  <div id="forgotPage" class="hidden min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 py-6 relative">
+    <div class="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-4 sm:gap-6 lg:gap-12 auth-layout">
+      <!-- LEFT: Illustration -->
+      <div class="auth-image-col w-full lg:w-1/2 flex items-center justify-center order-2 lg:order-1">
+        <img src="public/password.webp" alt="Password reset illustration" class="auth-image w-[85%] sm:w-[80%] lg:w-[88%] max-w-[480px] object-contain" />
+      </div>
+      <!-- RIGHT: Forgot password form card (layout matches app; gradient kept for index) -->
+      <div class="w-full lg:w-1/2 flex items-center justify-center order-1 lg:order-2">
+        <div class="relative overflow-hidden w-full max-w-[420px] rounded-xl px-8 sm:px-10 py-8 sm:py-10" style="background: linear-gradient(180deg, #4A76F3 0%, #2C4FAD 50%, #0A193F 100%); box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+          <h1 class="text-[20px] sm:text-[24px] font-bold text-center mb-3" style="color: #FFFFFF;">Forgot Your Password?</h1>
+          <p class="text-center text-[13px] sm:text-[14px] mb-5 leading-relaxed" style="color: #FFFFFF;">Enter your email address or mobile number and we will send you instructions to reset your password.</p>
+          <div class="flex flex-col items-center space-y-5">
+            <div class="w-full max-w-[316px]">
+              <input
+                id="forgotEmail"
+                type="text"
+                inputmode="email"
+                placeholder="Email or mobile number"
+                class="forgot-input w-full h-12 px-5 rounded-[1000px] border text-[14px] text-center outline-none focus:border-white/80 transition bg-transparent"
+                style="border: 1px solid rgba(255,255,255,0.5); color: #FFFFFF; text-align: center;"
+              />
+              <p id="forgotEmailError" class="error-text mt-1 text-center"></p>
+            </div>
+            <button
+              type="button"
+              onclick="handleForgotPassword()"
+              class="w-full max-w-[260px] rounded-[1000px] text-[16px] sm:text-[17px] font-bold shadow-md hover:opacity-95 transition disabled:opacity-60 flex items-center justify-center"
+              style="height: 48px; background-color: #F2B541; color: #FFFFFF;"
+            >
+              Continue
+            </button>
+            <p id="forgotFormMessage" class="error-text mt-2 text-center text-xs" style="color: rgba(255,255,255,0.9);"></p>
+          </div>
+          <div class="w-full max-w-[316px] mx-auto mt-6 text-center">
+            <a href="#login" onclick="location.hash='login'; showPage('login'); return false;" class="text-[13px] hover:underline" style="color: #FFFFFF;">Back to login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VERIFY EMAIL PAGE (layout matches app/verify-email) ================= -->
+  <div id="verifyEmailPage" class="hidden min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 py-6 relative">
+    <button type="button" onclick="showPage('forgot')" class="absolute left-4 top-4 text-2xl text-black" aria-label="Go back">
+      ←
+    </button>
+    <div class="w-full max-w-[480px]">
+      <div class="relative overflow-hidden w-full rounded-xl px-8 sm:px-10 py-8 sm:py-10 text-center" style="background: linear-gradient(180deg, #4A76F3 0%, #2C4FAD 50%, #0A193F 100%); box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+        <div class="flex justify-center mb-4 sm:mb-6">
+          <img src="public/email.webp" alt="Email verification" class="w-[96px] h-[96px] object-contain" />
+        </div>
+        <h1 class="text-[20px] sm:text-[24px] font-bold mb-2" style="color: #FFFFFF;">Verify your email</h1>
+        <p class="text-[12px] sm:text-[13px] leading-relaxed mb-6" style="color: #FFFFFF;">
+          Please enter the 4 digit code sent to your<br />
+          Registered email <span id="verifyEmailContact">email@example.com</span>
+        </p>
+
+        <form onsubmit="confirmEmailOtp(event); return false;" class="space-y-6">
+          <div class="flex justify-center gap-3 sm:gap-4">
+            <input id="emailOtp0" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('email',0,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+            <input id="emailOtp1" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('email',1,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+            <input id="emailOtp2" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('email',2,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+            <input id="emailOtp3" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('email',3,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+          </div>
+
+          <p class="text-[12px] sm:text-[13px]" style="color: #FFFFFF;">
+            Want to change your Email Address?
+            <button type="button" onclick="openForgotPage('verifyEmail')" class="underline font-semibold" style="color: #F2B541;">
+              Change Here
+            </button>
+          </p>
+
+          <button type="submit" id="verifyEmailConfirmBtn" class="w-full max-w-[260px] mx-auto rounded-[1000px] text-[16px] sm:text-[17px] font-bold shadow-md hover:opacity-95 transition flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed" style="height: 48px; background-color: #F2B541; color: #FFFFFF;">
+            Confirm
+          </button>
+
+          <p id="emailOtpExpiryMessage" class="text-sm text-center text-white mt-2"></p>
+
+          <p id="verifyEmailOtpError" class="text-[12px] mt-1" style="color: #F2B541;"></p>
+
+          <button type="button" onclick="resendCode('email')" class="text-[12px] sm:text-[13px] underline font-semibold" style="color: #FFFFFF;">
+            Resend CODE
+          </button>
+          <p id="verifyEmailResendMessage" class="text-[11px] sm:text-[12px] mt-1" style="color: #FFFFFF;"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VERIFY MOBILE PAGE (layout matches app/verify-mobile) ================= -->
+  <div id="verifyMobilePage" class="hidden min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 py-6 relative">
+    <button type="button" onclick="showPage('forgot')" class="absolute left-4 top-4 text-2xl text-black" aria-label="Go back">
+      ←
+    </button>
+    <div class="w-full max-w-[480px]">
+      <div class="relative overflow-hidden w-full rounded-xl px-8 sm:px-10 py-8 sm:py-10 text-center" style="background: linear-gradient(180deg, #4A76F3 0%, #2C4FAD 50%, #0A193F 100%); box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+        <div class="flex justify-center mb-4 sm:mb-6">
+          <img src="public/mobile.webp" alt="Mobile verification" class="w-[96px] h-[96px] object-contain" />
+        </div>
+        <h1 class="text-[20px] sm:text-[24px] font-bold mb-2" style="color: #FFFFFF;">Verify your Mobile</h1>
+        <p class="text-[12px] sm:text-[13px] leading-relaxed mb-6" style="color: #FFFFFF;">
+          Please enter the 4 digit code sent to your<br />
+          Registered mobile number <span id="verifyMobileContact">+91-XXXXXXXXXX</span>
+        </p>
+
+        <form onsubmit="confirmMobileOtp(event); return false;" class="space-y-6">
+          <div class="flex justify-center gap-3 sm:gap-4">
+            <input id="mobileOtp0" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('mobile',0,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+            <input id="mobileOtp1" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('mobile',1,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+            <input id="mobileOtp2" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('mobile',2,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+            <input id="mobileOtp3" type="text" maxlength="1" inputmode="numeric" oninput="handleOtpInput('mobile',3,event)" class="w-10 h-10 sm:w-12 sm:h-12 rounded border bg-transparent text-center text-lg text-white outline-none focus:border-white/80" style="border: 1px solid rgba(255,255,255,0.7);" />
+          </div>
+
+          <p class="text-[12px] sm:text-[13px]" style="color: #FFFFFF;">
+            Want to change your Mobile Number?
+            <button type="button" onclick="openForgotPage('verifyMobile')" class="underline font-semibold" style="color: #F2B541;">
+              Change Here
+            </button>
+          </p>
+
+          <button type="submit" id="verifyMobileConfirmBtn" class="w-full max-w-[260px] mx-auto rounded-[1000px] text-[16px] sm:text-[17px] font-bold shadow-md hover:opacity-95 transition flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed" style="height: 48px; background-color: #F2B541; color: #FFFFFF;">
+            Confirm
+          </button>
+
+          <p id="mobileOtpExpiryMessage" class="text-sm text-center text-white mt-2"></p>
+
+          <p id="verifyMobileOtpError" class="text-[12px] mt-1" style="color: #F2B541;"></p>
+
+          <button type="button" onclick="resendCode('mobile')" class="text-[12px] sm:text-[13px] underline font-semibold" style="color: #FFFFFF;">
+            Resend CODE
+          </button>
+          <p id="verifyMobileResendMessage" class="text-[11px] sm:text-[12px] mt-1" style="color: #FFFFFF;"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VERIFIED PAGE (layout matches app/verified) ================= -->
+  <div id="verifiedPage" class="hidden min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 py-6 relative">
+    <button type="button" onclick="location.hash='forgot'; showPage('forgot');" class="absolute left-4 top-4 text-2xl text-black" aria-label="Go back">
+      ←
+    </button>
+    <div class="w-full max-w-[480px]">
+      <div class="relative overflow-hidden w-full rounded-xl px-8 sm:px-10 py-8 sm:py-10 text-center" style="background: linear-gradient(180deg, #4A76F3 0%, #2C4FAD 50%, #0A193F 100%); box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+        <div class="flex justify-center mb-4 sm:mb-6">
+          <img src="public/tick.webp" alt="Verified" class="w-[96px] h-[96px] object-contain" />
+        </div>
+        <h1 class="text-[20px] sm:text-[24px] font-bold mb-2" style="color: #FFFFFF;">Verified !</h1>
+        <p class="text-[12px] sm:text-[13px] leading-relaxed mb-6 italic" style="color: #FFFFFF;">You have successfully verified</p>
+        <button type="button" onclick="location.hash='createNewPassword'; showPage('createNewPassword');" class="w-full max-w-[200px] mx-auto rounded-[1000px] text-[14px] sm:text-[15px] font-bold shadow-md hover:opacity-95 transition flex items-center justify-center" style="height: 40px; background-color: #F2B541; color: #000000;">
+          Start
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CREATE NEW PASSWORD PAGE (layout matches app/create-new-password) ================= -->
+  <div id="createNewPasswordPage" class="hidden min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 py-6 relative">
+    <button type="button" onclick="location.hash='verified'; showPage('verified');" class="absolute left-4 top-4 text-2xl text-black z-10" aria-label="Go back">
+      ←
+    </button>
+    <div class="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-4 sm:gap-6 lg:gap-12 auth-layout">
+      <div class="auth-image-col w-full lg:w-1/2 flex items-center justify-center order-2 lg:order-1">
+        <img src="public/new.webp" alt="Create new password" class="auth-image w-[85%] sm:w-[80%] lg:w-[88%] max-w-[480px] object-contain" />
+      </div>
+      <div class="w-full lg:w-1/2 flex items-center justify-center order-1 lg:order-2">
+        <div class="relative overflow-hidden w-full max-w-[420px] rounded-xl px-8 sm:px-10 py-8 sm:py-10" style="background: linear-gradient(180deg, #4A76F3 0%, #2C4FAD 50%, #0A193F 100%); box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+          <h1 class="text-[20px] sm:text-[24px] font-bold text-center mb-6" style="color: #FFFFFF;">Create New Password</h1>
+          <form onsubmit="handleUpdatePassword(event); return false;" class="space-y-5">
+            <div>
+              <label for="newPassword" class="block text-[13px] sm:text-[14px] mb-2" style="color: #FFFFFF;">New Password</label>
+              <div class="relative">
+                <input id="newPassword" type="password" placeholder="••••••••"  maxlength="60" class="w-full h-12 pl-4 pr-12 rounded border text-[14px] outline-none focus:border-white/80 transition bg-transparent" style="border: 1px solid rgba(255,255,255,0.5); color: #FFFFFF;" />
+                <button type="button" onclick="toggleNewPasswordVisibility()" class="absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white flex-shrink-0" aria-label="Show password">
+                  <i id="newPasswordToggle" class="fa-solid fa-eye text-sm"></i>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label for="confirmPassword" class="block text-[13px] sm:text-[14px] mb-2" style="color: #FFFFFF;">Confirm Password</label>
+              <div class="relative">
+                <input id="confirmPassword" type="password" placeholder="••••••••"  maxlength="60" class="w-full h-12 pl-4 pr-12 rounded border text-[14px] outline-none focus:border-white/80 transition bg-transparent" style="border: 1px solid rgba(255,255,255,0.5); color: #FFFFFF;" />
+                <button type="button" onclick="toggleConfirmPasswordVisibility()" class="absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white flex-shrink-0" aria-label="Show password">
+                  <i id="confirmPasswordToggle" class="fa-solid fa-eye text-sm"></i>
+                </button>
+              </div>
+            </div>
+            <p class="text-[11px] sm:text-[12px] leading-relaxed" style="color: #FFFFFF;">Password Must be 8-60 characters and include at least two of the Following: Uppercase, Lowercase, number, or symbol.</p>
+            <p id="createPasswordError" class="text-[12px]" style="color: #ff6b6b;"></p>
+            <button type="submit" class="w-full max-w-[240px] mx-auto rounded-lg text-[12px] sm:text-[13px] font-bold uppercase shadow-md hover:opacity-95 transition flex items-center justify-center" style="height: 36px; background-color: #F2B541; color: #FFFFFF;">
+              UPDATE PASSWORD
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BACKEND ERROR PAGE ================= -->
+  <div id="errorPage" class="hidden min-h-screen flex flex-col items-center justify-center bg-white px-4">
+    <h1 class="text-6xl font-bold text-red-600">404</h1>
+    <p class="mt-4 text-lg text-gray-700">
+      Backend Not Connected
+    </p>
+    <p class="mt-2 text-sm text-gray-500">
+      Please try again later.
+    </p>
+    <button
+      onclick="if (window.history.length > 1) { history.back(); } else { location.hash='planning'; showPage('planning'); }"
+      class="mt-6 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+    >
+      Go Back
+    </button>
+  </div>
+
+  <div id="notFoundPage" class="hidden min-h-screen flex flex-col items-center justify-center bg-white px-4">
+    <h1 class="text-6xl font-bold text-red-600">404</h1>
+    <p class="mt-4 text-lg text-gray-700">
+      Page Not Found
+    </p>
+    <p class="mt-2 text-sm text-gray-500">
+      The page you are looking for does not exist.
+    </p>
+    <button
+      onclick="if (window.history.length > 1) { history.back(); } else { location.hash='planning'; showPage('planning'); }"
+      class="mt-6 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+    >
+      Go Back
+    </button>
+  </div>
+
+</body>
+</html>
